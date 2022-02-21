@@ -31,7 +31,7 @@ public:
             op::error("No images found on: " + directoryPath, __LINE__, __FUNCTION__, __FILE__);
     }
 
-    std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> createDatum()
+    std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> createDatum(cv::Mat cvimg)
     {
         // Close program when empty frame
         if (mClosed || mImageFiles.size() <= mCounter)
@@ -51,9 +51,11 @@ public:
             datumPtr = std::make_shared<op::Datum>();
 
             // Fill datum
-            const cv::Mat cvInputData = cv::imread(mImageFiles.at(mCounter++));
+            //const cv::Mat cvInputData = cv::imread(mImageFiles.at(mCounter++));
+           
+            const cv::Mat  cvInputData = cvimg;
             datumPtr->cvInputData = OP_CV2OPCONSTMAT(cvInputData);
-
+            
             // If empty frame -> return nullptr
             if (datumPtr->cvInputData.empty())
             {
@@ -77,6 +79,35 @@ private:
     unsigned long long mCounter;
     bool mClosed;
 };
+
+// This worker will just read and return all the jpg files in a directory
+void display(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>>& datumsPtr)
+{
+    try
+    {
+        // User's displaying/saving/other processing here
+            // datum.cvOutputData: rendered frame with pose or heatmaps
+            // datum.poseKeypoints: Array<float> with the estimated pose
+        if (datumsPtr != nullptr && !datumsPtr->empty())
+        {
+            // Display image
+            const cv::Mat cvMat = OP_OP2CVCONSTMAT(datumsPtr->at(0)->cvOutputData);
+            if (!cvMat.empty())
+            {
+                cv::imshow(OPEN_POSE_NAME_AND_VERSION + " - Tutorial C++ API", cvMat);
+                cv::waitKey(0);
+            }
+            else
+                op::opLog("Empty cv::Mat as output.", op::Priority::High, __LINE__, __FUNCTION__, __FILE__);
+        }
+        else
+            op::opLog("Nullptr or empty datumsPtr found.", op::Priority::High);
+    }
+    catch (const std::exception& e)
+    {
+        op::error(e.what(), __LINE__, __FUNCTION__, __FILE__);
+    }
+}
 
 void configureWrapper(op::Wrapper& opWrapper)
 {
@@ -189,18 +220,26 @@ int tutorialApiCpp()
         op::opLog("Starting thread(s)...", op::Priority::High);
         opWrapper.start();
 
+        cv::VideoCapture cap = cv::VideoCapture("rtsp://admin:admin123@192.168.0.145/");
+        cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
+        //cv::VideoCapture cap = cv::VideoCapture("rtspsrc location = rtsp://admin:admin123@192.168.1.108/  ! decodebin ! videoconvert ! appsink max-buffers=1 drop=true" , cv::CAP_GSTREAMER);
+        //cv::VideoCapture cap = cv::VideoCapture(0);
+        cv::Mat cvimg;
+
         // User processing
         UserInputClass userInputClass(FLAGS_image_dir);
         bool userWantsToExit = false;
         while (!userWantsToExit && !userInputClass.isFinished())
         {
             // Push frame
-            auto datumToProcess = userInputClass.createDatum();
+            cap >> cvimg;
+            auto datumToProcess = userInputClass.createDatum(cvimg);
             if (datumToProcess != nullptr)
             {
                 auto successfullyEmplaced = opWrapper.waitAndEmplace(datumToProcess);
                 if (!successfullyEmplaced)
                     op::opLog("Processed datum could not be emplaced.", op::Priority::High);
+                //display(successfullyEmplaced);
             }
         }
 
@@ -223,6 +262,9 @@ int main(int argc, char *argv[])
 {
     // Parsing command line flags
     gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+    FLAGS_net_resolution = "320x176";
+    
 
     // Running tutorialApiCpp
     return tutorialApiCpp();

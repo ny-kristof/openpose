@@ -426,7 +426,7 @@ namespace op
                     producerString, cameraParameterPath, undistortImage, numberViews);
             // IP camera
             else if (producerType == ProducerType::IPCamera)
-                return std::make_shared<IpCameraReader>(producerString, cameraParameterPath, undistortImage);
+                return std::make_shared<IpCameraReader>(producerString, cameraResolution, cameraParameterPath, undistortImage);
             // Flir camera
             else if (producerType == ProducerType::FlirCamera)
                 return std::make_shared<FlirReader>(

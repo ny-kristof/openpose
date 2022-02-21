@@ -13,7 +13,7 @@
 
 // Custom OpenPose flags
 // Producer
-DEFINE_string(image_path, "examples/media/COCO_val2014_000000000294.jpg",
+DEFINE_string(image_path, "examples/media/COCO_val2014_000000000536.jpg",
     "Process an image. Read all standard formats (jpg, png, bmp, etc.).");
 // Display
 DEFINE_bool(no_display,                 false,
@@ -206,6 +206,8 @@ int main(int argc, char *argv[])
 {
     // Parsing command line flags
     gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+    FLAGS_net_resolution = "320x176";
 
     // Running tutorialApiCpp
     return tutorialApiCpp();
