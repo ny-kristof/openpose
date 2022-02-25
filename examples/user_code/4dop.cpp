@@ -341,7 +341,7 @@ Eigen::Matrix3Xf convertOPtoEigen(op::Array<float>&opOutput, int pid) {
 }
 
 std::vector<Eigen::Matrix3Xf> convertOPtoEigenFullFrame(op::Array<float>&opOutput) {
-    std::vector<Eigen::Matrix3Xf> eigenKeypointsVector;
+    std::vector<Eigen::Matrix3Xf> eigenKeypointsVector(GetSkelDef(BODY25).jointSize);
     if (!opOutput.empty())
     {
         for (int jointID = 0; jointID < opOutput.getSize()[1]; jointID++)
@@ -366,7 +366,8 @@ std::vector<Eigen::Matrix3Xf> convertOPtoEigenFullFrame(op::Array<float>&opOutpu
                 }
             }
 
-            eigenKeypointsVector.emplace_back(jointOfPeople);
+            //eigenKeypointsVector.emplace_back(jointOfPeople);
+            eigenKeypointsVector[jointID] = jointOfPeople;
         }
     }
     
@@ -388,7 +389,7 @@ std::vector<int> validPersonOfJoint(op::Array<float>& opOutput, int jointID)
 }
 
 std::vector<Eigen::MatrixXf> createFakePafsFullFrame(op::Array<float>& opOutput, SkelDef& def) {
-    std::vector<Eigen::MatrixXf> eigenPafVector;
+    std::vector<Eigen::MatrixXf> eigenPafVector(GetSkelDef(BODY25).pafSize);
 
     if (!opOutput.empty())
     {
@@ -407,7 +408,8 @@ std::vector<Eigen::MatrixXf> createFakePafsFullFrame(op::Array<float>& opOutput,
                     else eigenPafOfPair(i, j) = (float)0.0;
                 }
             }
-            eigenPafVector.emplace_back(eigenPafOfPair);
+            //eigenPafVector.emplace_back(eigenPafOfPair);
+            eigenPafVector[pafIdx] = eigenPafOfPair;
         }
     }
     
@@ -460,9 +462,10 @@ int tutorialApiCpp()
             }
             else
             {
-                videos[i] = cv::VideoCapture(i); //egy webcam beolvasás
+                //videos[i] = cv::VideoCapture(i); //egy webcam beolvasás
                 //streams[i] = new op::WebcamReader(0, op::Point<int>{1280, 720}); //egy webcam beolvasás
                 streams[i] = new op::IpCameraReader("http://admin:admin123@192.168.1.108/cgi-bin/mjpg/video.cgi?channel=1&subtype=1", op::Point<int>{640, 480});
+                //streams[i] = new op::IpCameraReader("rtsp://admin:admin123@192.168.1.108", op::Point<int>{1280, 720});
                 //videos[i] = cv::VideoCapture("rtsp://admin:admin123@192.168.1.108"); //egy ipcam beolvasás
                /* std::cout << "The stream image size is: " << int(videos[i].get(cv::CAP_PROP_FRAME_WIDTH)) << "×" << int(videos[i].get(cv::CAP_PROP_FRAME_HEIGHT)) << std::endl;
                 if (!videos[i].isOpened())
@@ -479,7 +482,7 @@ int tutorialApiCpp()
             }
             else
             {
-                cv::Size imgSize(1280, 720);
+                cv::Size imgSize(640, 480);
                 projs.middleCols(4 * i, 4) = iter->second.eiProj;
                 rawImgs[i].create(imgSize, CV_8UC3);   //üres képkockák létrehozása a videó méretével
             }
@@ -545,28 +548,42 @@ int tutorialApiCpp()
                     std::cout << "successfullyPopped: " << successfullyPopped << std::endl;
                     if (successfullyEmplaced && successfullyPopped)
                     {
+                        std::cout << "No Person detected: " << datumProcessed->at(0)->poseKeypoints.empty() << std::endl;
                         if (!FLAGS_no_display)
                         {
                             userWantsToExit = userOutputClass.display(datumProcessed);
                             std::cout << "Display done!"  << std::endl;
                         }
                         
-                        //TODO: itt "symbol file not loaded" exeptionnel kilép, ha "datumProcessed->at(0)->poseKeypoints" array üres (az openpose nem talált jointokat az adott framen)
+                        ////TODO: itt "symbol file not loaded" exeptionnel kilép, ha "datumProcessed->at(0)->poseKeypoints" array üres (az openpose nem talált jointokat az adott framen)
+                        ////TODO: If no person is detected, frameDetections[i] joints and pafs are vectors with the size 0, so Mapping() can't access the jID-th element --> joints need to be initialized as a vector with the correct size
                         frameDetections[i].joints = convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
                         frameDetections[i].pafs = createFakePafsFullFrame(datumProcessed->at(0)->poseKeypoints, def);
+
                         std::cout << "Conversion to Eigen/4Dassoc done!" << std::endl;
 
-                        cv::resize(rawImgs[i], rawImgs[i], cv::Size(), skelPainter.rate, skelPainter.rate);
-                        associater.SetDetection(i , frameDetections[i].Mapping(SKEL19)); //Associater osztály m_detections változójában tárolja a detectiont
-                        std::cout << "One camera detection setting done!" << std::endl;
                         /*for (int j = 0; j < frameDetections[i].joints.size(); j++)
                         {
                             std::cout << "Joints" << j << ": " << std::endl << frameDetections[i].joints[j] << std::endl;
-                        }*/
-                        /*for (int j = 0; j < frameDetections[i].pafs.size(); j++)
+                        }
+                        for (int j = 0; j < frameDetections[i].pafs.size(); j++)
                         {
                             std::cout << "FakePafs" << j << " , between joints " << def.pafDict(0, j) << " and " << def.pafDict(1, j) << ": " << std::endl << frameDetections[i].pafs[j] << std::endl;
                         }*/
+                       /* if (datumProcessed->at(0)->poseKeypoints.empty())
+                        {
+                            associater.SetDetection(i, frameDetections[i]);
+                            continue;
+                        }*/
+
+                        
+                        cv::resize(rawImgs[i], rawImgs[i], cv::Size(), skelPainter.rate, skelPainter.rate);
+                        std::cout << "Resize for skelPainter done!" << std::endl;
+                        auto& mappedDetection = frameDetections[i].Mapping(SKEL19);
+                        //TODO: Runtime error in Mapping() function, probably index out of bounds
+                        std::cout << "Mapping done!" << std::endl;
+                        associater.SetDetection(i , mappedDetection); //Associater osztály m_detections változójában tárolja a detectiont
+                        std::cout << "One camera detection setting done!" << std::endl;
                     }
                     else
                     {
@@ -575,7 +592,7 @@ int tutorialApiCpp()
                 }
             }
 
-            if (!userInputClass.isFinished())
+            if (!userInputClass.isFinished() && !frameDetections.empty())
             {
                 associater.SetSkels3dPrev(skelUpdater.GetSkel3d());   //egy framenek az összes kamera detectionbõl (SetDetection) elõállítjuk a 3D skeletont 
                 associater.Associate(); //kiszámoljuk a 3D skeleton paramétereit

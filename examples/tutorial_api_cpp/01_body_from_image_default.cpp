@@ -135,7 +135,8 @@ int main(int argc, char *argv[])
 {
     // Parsing command line flags
     gflags::ParseCommandLineFlags(&argc, &argv, true);
-
+    
+    FLAGS_net_resolution = "320x176";
     // Running tutorialApiCpp
     return tutorialApiCpp();
 }
