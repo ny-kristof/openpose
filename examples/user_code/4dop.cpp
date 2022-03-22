@@ -671,6 +671,18 @@ int tutorialApiCpp()
 	    associater.SetNodeMultiplex(true);
 	    associater.SetNormalizeEdge(true);			// new feature
 
+        /*associater.SetMaxTempDist(0.3f);
+        associater.SetMaxEpiDist(0.2f);
+        associater.SetEpiWeight(2.f);
+        associater.SetTempWeight(2.f);
+        associater.SetViewWeight(1.f);
+        associater.SetPafWeight(1.f);
+        associater.SetHierWeight(2.f);
+        associater.SetViewCntWelsh(1.0);
+        associater.SetMinCheckCnt(20);
+        associater.SetNodeMultiplex(true);
+        associater.SetNormalizeEdge(true);*/
+
 	    SkelPainter skelPainter(SKEL19);
 	    skelPainter.rate = 512.f / float(cameras.begin()->second.imgSize.width);
 	    SkelFittingUpdater skelUpdater(SKEL19, "C:/Users/nykri/Documents/3Dhuman/4d_association-windows/data/skel/SKEL19_new");
@@ -743,13 +755,13 @@ int tutorialApiCpp()
                         ////TODO: itt "symbol file not loaded" exeptionnel kilép, ha "datumProcessed->at(0)->poseKeypoints" array üres (az openpose nem talált jointokat az adott framen)
                         ////TODO: If no person is detected, frameDetections[i] joints and pafs are vectors with the size 0, so Mapping() can't access the jID-th element --> joints need to be initialized as a vector with the correct size
                         //frameDetections[i].joints = convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
-                        frameDetections[i].joints = convertOPCandidatesToEigenFullFrame(datumProcessed->at(0)->poseCandidates);
+                        frameDetections[i].joints = (FLAGS_part_candidates) ? convertOPCandidatesToEigenFullFrame(datumProcessed->at(0)->poseCandidates): convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
                         /*for (int j = 0; j < frameDetections[i].joints.size(); j++)
                         {
                             std::cout << "Joints" << j << ": " << std::endl << frameDetections[i].joints[j] << std::endl;
                         }*/
                         //frameDetections[i].pafs = createFakePafsFullFrame(datumProcessed->at(0)->poseKeypoints, def);
-                        frameDetections[i].pafs = createPafsFullFrame(datumProcessed, def, IOScale);
+                        frameDetections[i].pafs = (FLAGS_part_candidates) ? createPafsFullFrame(datumProcessed, def, IOScale) : createFakePafsFullFrame(datumProcessed->at(0)->poseKeypoints, def);
 
                         //std::cout << "Conversion to Eigen/4Dassoc done!" << std::endl;
 
@@ -817,7 +829,7 @@ int tutorialApiCpp()
                 //a frame kimentése képbe
                 //cv::imwrite("output/detect3/" + std::to_string(framecount) + ".jpg", detectImg);
                 //cv::imwrite("output/assoc3/" + std::to_string(framecount) + ".jpg", assocImg);
-                cv::imwrite("output/reproj5/" + std::to_string(framecount) + ".jpg", reprojImg);
+                cv::imwrite("output/reproj8/" + std::to_string(framecount) + ".jpg", reprojImg);
             }
 
             std::cout << "------ End of processing frame " << std::to_string(framecount) << " ------" << std::endl;
@@ -826,7 +838,7 @@ int tutorialApiCpp()
             framecount++;
 
             //This can decrease performance, but it hasn't been checked yet
-            if (kbhit())
+            if (kbhit() | framecount >= 300)
                 break;
             
         }//end while
@@ -839,10 +851,45 @@ int tutorialApiCpp()
         // Measuring total time
         op::printTime(opTimer, "OpenPose demo successfully finished. Total time: ", " seconds.", op::Priority::High);
 
-        //System GPU: 1× NVidia GTX 1650
-        // Performance:
-        //With image saving: ~1.8 fps
-        //Without image saving: ~2.05 fps (300frame/149s)
+        //Config:
+        // System GPU: 1× NVidia GTX 1650
+        // dataset: mvmp
+        // net_resolution: -1×176
+        // Assoc. algorithm: OP
+        // 
+        //Performance:
+        // With image saving: ~1.8 fps
+        // Without image saving: ~2.05 fps (300frame/149s) 
+
+        //Config:
+        // System GPU: 1× NVidia GTX 1650
+        // dataset: mvmp
+        // net_resolution: -1×176
+        // Assoc. algorithm: 4D assoc
+        // 
+        //Performance:
+        // With image saving: ~ fps
+        // Without image saving: ~1.997 fps (300frame/151.7s)
+
+        //Config:
+        // System GPU: 1× NVidia GTX 1650
+        // dataset: shelf
+        // net_resolution: -1×288
+        // Assoc. algorithm: OP
+        // 
+        //Performance:
+        // Without image saving: ~1.35 fps (300frame/222s)
+
+        //Config:
+        // System GPU: 1× NVidia GTX 1650
+        // dataset: shelf
+        // net_resolution: -1×288
+        // Assoc. algorithm: 4D assoc
+        // 
+        //Performance:
+        // Without image saving: ~1.19 fps (300frame/ 252s)
+
+
 
         // Return
         return 0;
@@ -858,7 +905,7 @@ int main(int argc, char *argv[])
     // Parsing command line flags
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    FLAGS_net_resolution = "-1x288";
+    FLAGS_net_resolution = "-1x176";
     FLAGS_part_candidates = true;
 
     FLAGS_part_to_show = 0;
@@ -868,7 +915,7 @@ int main(int argc, char *argv[])
     FLAGS_heatmaps_scale = 0; //0 --> in range [-1, 1] ; 1 --> in range [0, 1] ; 2(default) --> in range [0 , 255]
 
     FLAGS_no_display = true;
-    FLAGS_save_images = true;
+    FLAGS_save_images = false;
     FLAGS_use_webcams = false;
     //FLAGS_write_images = "C:\\Users\\nykri\\Documents\\3Dhuman\\openpose\\examples\\media2\\output";
     
