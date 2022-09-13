@@ -36,6 +36,9 @@ DEFINE_bool(save_images,                false,
 //Using webcam or demo videos
 DEFINE_bool(use_webcams,                false,
     "Wether to use the webcams for live demo or use the prerecorded sample videos");
+//Undistort the input images
+DEFINE_bool(undist,                     false,
+    "Wether to undistort the input images. The distortion parameters have to be given");
 
 
 // This worker will just read and return all the basic image file formats in a directory
@@ -123,8 +126,11 @@ public:
             {
                 // Display image and sleeps at least 1 ms (it usually sleeps ~5-10 msec to display the image)
                 const cv::Mat cvMat = OP_OP2CVCONSTMAT(datumsPtr->at(0)->cvOutputData);
-                if (!cvMat.empty())
+                if (!cvMat.empty()) 
+                {
                     cv::imshow(OPEN_POSE_NAME_AND_VERSION + " - Tutorial C++ API", cvMat);
+                    cv::waitKey(0);
+                }
                 else
                     op::opLog("Empty cv::Mat as output.", op::Priority::High);
             }
@@ -605,10 +611,20 @@ int tutorialApiCpp()
         std::vector<cv::Mat> rawImgs(cameras.size());
         std::vector<op::Matrix> rawImgsOpMat(cameras.size());
         std::vector<cv::VideoCapture> videos(cameras.size());  //annyi videót vár, ahány kamera van
-        std::vector<op::WebcamReader*> streams(cameras.size());
+        std::vector<op::IpCameraReader*> streams(cameras.size());
         std::vector<std::vector<OpenposeDetection>> seqDetections(cameras.size());
         const SkelDef& skelDef = GetSkelDef(SKEL19);
         std::vector<std::map<int, Eigen::Matrix4Xf>> skels; //A vektor minden eleme egy frame skeletonjait tartalmazza
+
+        std::vector<std::string> ips{ "192.168.0.145","192.168.0.146" };
+        cv::Mat map1, map2;
+        if (FLAGS_undist)
+        {
+            //TODO: distortion parameters 
+            cv::Mat dist = (cv::Mat_<double>(5, 1) << -4.3733665180754527e-01, 2.1921356552711482e-01, 1.1597452449095796e-03,
+                4.6874816837838441e-03, -5.9483271093969864e-02);
+            cv::initUndistortRectifyMap(cameras.begin()->second.originK, dist, cv::Mat(), cameras.begin()->second.originK, cameras.begin()->second.imgSize, CV_32FC1, map1, map2);
+        }
 
 #pragma omp parallel for
         for (int i = 0; i < cameras.size(); i++) {
@@ -630,9 +646,9 @@ int tutorialApiCpp()
             else
             {
                 //videos[i] = cv::VideoCapture(i); //egy webcam beolvasás
-                streams[i] = new op::WebcamReader(0, op::Point<int>{1280, 720}); //egy webcam beolvasás
+                //streams[i] = new op::WebcamReader(0, op::Point<int>{1280, 720}); //egy webcam beolvasás
                 //streams.emplace_back("http://admin:admin123@192.168.1.108/cgi-bin/mjpg/video.cgi?channel=1&subtype=1", op::Point<int>{640, 480}); //ehelyett inkább pointereket használok, mert azt mondta a zinternet
-                //streams[i] = new op::IpCameraReader("http://admin:admin123@192.168.1.108/cgi-bin/mjpg/video.cgi?channel=1&subtype=1", op::Point<int>{640, 480});
+                streams[i] = new op::IpCameraReader("http://admin:admin123@" + ips[i] + "/cgi-bin/mjpg/video.cgi?channel=1&subtype=1", op::Point<int>{640, 480});
                 //streams[i] = new op::IpCameraReader("rtsp://admin:admin123@192.168.1.108", op::Point<int>{1280, 720});
                 //videos[i] = cv::VideoCapture("rtsp://admin:admin123@192.168.1.108"); //egy ipcam beolvasás
                 cv::Size imgSize(int(streams[i]->get(cv::CAP_PROP_FRAME_WIDTH)), int(streams[i]->get(cv::CAP_PROP_FRAME_HEIGHT)));
@@ -700,6 +716,7 @@ int tutorialApiCpp()
                 {
                     videos[i] >> rawImgs[i];
                     //cv::imwrite("C:/Users/nykri/Documents/3Dhuman/4d_association-windows/data/shelf/video" + std::to_string(framecount) + ".jpg", rawImgs[i]);
+                    if (FLAGS_undist) cv::remap(rawImgs[i], rawImgs[i], map1, map2, cv::INTER_LINEAR);
                 }
                 else
                 {
@@ -829,7 +846,7 @@ int tutorialApiCpp()
                 //a frame kimentése képbe
                 //cv::imwrite("output/detect3/" + std::to_string(framecount) + ".jpg", detectImg);
                 //cv::imwrite("output/assoc3/" + std::to_string(framecount) + ".jpg", assocImg);
-                cv::imwrite("output/reproj8/" + std::to_string(framecount) + ".jpg", reprojImg);
+                cv::imwrite("output/reproj91u/" + std::to_string(framecount) + ".jpg", reprojImg);
             }
 
             std::cout << "------ End of processing frame " << std::to_string(framecount) << " ------" << std::endl;
@@ -915,10 +932,10 @@ int main(int argc, char *argv[])
     FLAGS_heatmaps_scale = 0; //0 --> in range [-1, 1] ; 1 --> in range [0, 1] ; 2(default) --> in range [0 , 255]
 
     FLAGS_no_display = true;
-    FLAGS_save_images = false;
+    FLAGS_save_images = true;
     FLAGS_use_webcams = false;
     //FLAGS_write_images = "C:\\Users\\nykri\\Documents\\3Dhuman\\openpose\\examples\\media2\\output";
-    
+    FLAGS_undist = true;
 
 
 
