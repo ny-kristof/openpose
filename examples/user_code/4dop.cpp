@@ -722,6 +722,7 @@ int tutorialApiCpp()
                 {
                     ////TODO: make rawImgs type op::Matrix, make userInputClass.createDatumFromVideo function's input the same -->inkább ne, sokkal többet kell átírni máshol és OP_OP2CVCONSTMAT csak egy return, elvileg nem rontja a futási idõt -->mégis megcsináltam...
                     rawImgsOpMat[i] = streams[i]->getFrame();
+                    rawImgs[i] = OP_OP2CVMAT(rawImgsOpMat[i]);
                 }
             }
 
@@ -792,11 +793,12 @@ int tutorialApiCpp()
                             continue;
                         }*/
 
-                        if (!FLAGS_use_webcams)
+                        //if (!FLAGS_use_webcams)
                             cv::resize(rawImgs[i], rawImgs[i], cv::Size(), skelPainter.rate, skelPainter.rate);
-                        else
+                        //else
                             //TODO: Ez így lehet nem rakja vissza a második paraméterbe a képet, mert közben konvertáljuk. Szóval simán lehet ezért szar...
-                            cv::resize(OP_OP2CVCONSTMAT(rawImgsOpMat[i]), OP_OP2CVCONSTMAT(rawImgsOpMat[i]), cv::Size(), skelPainter.rate, skelPainter.rate);
+                        //    cv::resize(OP_OP2CVCONSTMAT(rawImgsOpMat[i]), OP_OP2CVCONSTMAT(rawImgsOpMat[i]), cv::Size(), skelPainter.rate, skelPainter.rate);
+                        
                         //std::cout << "Resize for skelPainter done!" << std::endl;
                         auto& mappedDetection = frameDetections[i].Mapping(SKEL19);
                         ////TODO: Runtime error in Mapping() function, probably index out of bounds
@@ -826,7 +828,7 @@ int tutorialApiCpp()
                 std::cout << "Saving images" << std::endl;
                 cv::Mat detectImg, assocImg, reprojImg;
                 const int layoutCols = 3;
-                //Ez itt gond lesz, mert a rawImgsOpMat változókba mentjük az ipCameraReader-bõl érkezõ frameket. Így ez csak a videós megoldásra mûködik
+                ////TODO:Ez itt gond lesz, mert a rawImgsOpMat változókba mentjük az ipCameraReader-bõl érkezõ frameket. Így ez csak a videós megoldásra mûködik --> de, mert mostmár a getFramenél belerakjuk a rawImgs-be is a képet, hogy meglegyen cv::Mat-ban is 
                 std::vector<cv::Rect> rois = SkelPainter::MergeImgs(rawImgs, detectImg, layoutCols,
                     { rawImgs.begin()->cols, rawImgs.begin()->rows }); //az összes kamerakép összeillesztése egy gridbe (detectImg), erre rajzoljuk majd a végeredményt. Rois: A grid kis képeinek befoglaló téglalapjainak koordinátái (nagy kép almátrixa)
                 detectImg.copyTo(assocImg);
