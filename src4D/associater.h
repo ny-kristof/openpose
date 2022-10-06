@@ -9,6 +9,7 @@ class Associater
 {
 public:
 	Associater(const SkelType& type, const std::map<std::string, Camera>& cams);
+	//Associater() = default;
 	void SetDetections(const std::vector<OpenposeDetection>& detections) { m_detections = detections; }
 	void SetDetection(const int& view, const OpenposeDetection& detection) { assert(detection.type == m_type);  m_detections[view] = detection; }
 	void SetDetection(const std::string& serialNumber, const OpenposeDetection& detection) { SetDetection(std::distance(m_cams.begin(), m_cams.find(serialNumber)), detection); }

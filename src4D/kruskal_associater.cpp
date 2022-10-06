@@ -29,6 +29,7 @@ KruskalAssociater::KruskalAssociater(const SkelType& type, const std::map<std::s
 }
 
 
+
 void KruskalAssociater::CalcBoneNodes()
 {
 	const SkelDef& def = GetSkelDef(m_type);

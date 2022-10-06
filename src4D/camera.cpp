@@ -72,9 +72,9 @@ void Camera::Parse(const Json::Value& json)
 void Camera::Rectify()
 {
 	cvK = cv::getOptimalNewCameraMatrix(
-		originK, distCoeff, imgSize, rectifyAlpha);
+		originK, distCoeff2, imgSize, rectifyAlpha);
 	cv::initUndistortRectifyMap(
-		originK, distCoeff, cv::Mat(), cvK, imgSize, CV_32FC1, rectifyMapX, rectifyMapY);
+		originK, distCoeff2, cv::Mat(), cvK, imgSize, CV_32FC1, rectifyMapX, rectifyMapY);
 }
 
 

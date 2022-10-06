@@ -6,6 +6,7 @@ class KruskalAssociater : public Associater
 {
 public:
 	KruskalAssociater(const SkelType& type, const std::map<std::string, Camera>& cams);
+	//KruskalAssociater() = default;
 	virtual void Associate() override;
 
 	void SetEpiWeight(const float& _wEpi) { m_wEpi = _wEpi; }

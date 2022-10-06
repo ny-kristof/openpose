@@ -1,3 +1,4 @@
+
 // ------------------------------------------------ OpenPose C++ Demo ------------------------------------------------
 // This example summarizes all the functionality of the OpenPose library. It can...
     // 1. Read a frames source (images, video, webcam, 3D stereo Flir cameras, etc.).
@@ -154,8 +155,9 @@ int main(int argc, char *argv[])
 {
     // Parsing command line flags
     gflags::ParseCommandLineFlags(&argc, &argv, true);
-
-    FLAGS_net_resolution = "320x176";
+    FLAGS_ip_camera = "http://admin:admin123@169.254.150.104/cgi-bin/mjpg/video.cgi?channel=1&subtype=1";
+    FLAGS_net_resolution = "-1x176";
+    //FLAGS_net_resolution = "320x176";
     //FLAGS_heatmaps_add_bkg = true; //nem lassította egyáltalán
     //FLAGS_heatmaps_add_PAFs = true;
 

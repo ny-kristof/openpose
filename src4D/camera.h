@@ -22,6 +22,7 @@ struct Camera
 
 	// calibration param
 	cv::Mat_<float> distCoeff = cv::Mat_<float>::zeros(5, 1);
+	cv::Mat_<float> distCoeff2 = cv::Mat_<float>::zeros(5, 1);
 	double rectifyAlpha = 0;
 	cv::Matx33f originK;
 	cv::Mat rectifyMapX, rectifyMapY;

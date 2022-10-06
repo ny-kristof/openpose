@@ -137,3 +137,5 @@ html/
 
 ######################### Validation Scripts & Testing #########################
 output*/
+
+cam_calibration/

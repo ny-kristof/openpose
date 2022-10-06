@@ -1,4 +1,4 @@
-ï»¿// ---------------------THIS WAS FORKED FROM: OpenPose C++ API Tutorial - Example 12 - Custom Input, Output, and Datum ---------------------
+// ---------------------THIS WAS FORKED FROM: OpenPose C++ API Tutorial - Example 12 - Custom Input, Output, and Datum ---------------------
 // Asynchronous mode: ideal for fast prototyping when performance is not an issue.
 // In this function, the user can implement its own way to create frames (e.g., reading his own folder of images)
 // and its own way to render/display them after being processed by OpenPose.
@@ -28,16 +28,16 @@
 //DEFINE_string(image_dir,                "examples/media2/",
 //    "Process a directory of images. Read all standard formats (jpg, png, bmp, etc.).");
 // Display
-DEFINE_bool(no_display, false,
+DEFINE_bool(no_display,                 false,
     "To disable visualization.");
 //Saving images
-DEFINE_bool(save_images, false,
+DEFINE_bool(save_images,                false,
     "Enable to save the detecton, association and reprojection images created by the 4Dasscoc algorithm");
 //Using webcam or demo videos
-DEFINE_bool(use_webcams, false,
+DEFINE_bool(use_webcams,                false,
     "Wether to use the webcams for live demo or use the prerecorded sample videos");
 //Undistort the input images
-DEFINE_bool(undist, false,
+DEFINE_bool(undist,                     false,
     "Wether to undistort the input images. The distortion parameters have to be given");
 
 
@@ -46,9 +46,9 @@ class UserInputClass
 {
 public:
     UserInputClass() :
-        mClosed{ false }
+        mClosed{false}
     {
-
+        
     }
 
     std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> createDatum(cv::Mat image)
@@ -126,7 +126,7 @@ public:
             {
                 // Display image and sleeps at least 1 ms (it usually sleeps ~5-10 msec to display the image)
                 const cv::Mat cvMat = OP_OP2CVCONSTMAT(datumsPtr->at(0)->cvOutputData);
-                if (!cvMat.empty())
+                if (!cvMat.empty()) 
                 {
                     cv::imshow(OPEN_POSE_NAME_AND_VERSION + " - Tutorial C++ API", cvMat);
                     cv::waitKey(0);
@@ -136,7 +136,7 @@ public:
             }
             else
                 op::opLog("Nullptr or empty datumsPtr found.", op::Priority::High);
-            if ((char)27 == (char)cv::waitKey(1))
+            if ((char)27 == (char)cv::waitKey(1)) 
                 return true;
             return false;
         }
@@ -187,7 +187,7 @@ public:
                 // Display image
                 if (!imageToRender.empty())
                 {
-                    std::string xory = (desiredChannel % 2 == 0) ? "x" : "y";
+                    std::string xory = (desiredChannel % 2 ==0) ? "x" : "y";
                     //cv::imshow(OPEN_POSE_NAME_AND_VERSION + " - Tutorial C++ API", imageToRender);
                     cv::imshow("PAF heatmap " + xory + " between joints " + std::to_string(def.pafDict(0, desiredChannel / 2)) + " and " + std::to_string(def.pafDict(1, desiredChannel / 2)), imageToRender);
                     cv::waitKey(0);
@@ -215,15 +215,15 @@ public:
             // Accesing each element of the keypoints
             const auto& poseKeypoints = datumsPtr->at(0)->poseKeypoints;
             op::opLog("Person pose keypoints:");
-            for (auto person = 0; person < poseKeypoints.getSize(0); person++)
+            for (auto person = 0 ; person < poseKeypoints.getSize(0) ; person++)
             {
                 op::opLog("Person " + std::to_string(person) + " (x, y, score):");
-                for (auto bodyPart = 0; bodyPart < poseKeypoints.getSize(1); bodyPart++)
+                for (auto bodyPart = 0 ; bodyPart < poseKeypoints.getSize(1) ; bodyPart++)
                 {
                     std::string valueToPrint;
                     valueToPrint += std::to_string(bodyPart) + "\t";
-                    for (auto xyscore = 0; xyscore < poseKeypoints.getSize(2); xyscore++)
-                        valueToPrint += std::to_string(poseKeypoints[{person, bodyPart, xyscore}]) + " ";
+                    for (auto xyscore = 0 ; xyscore < poseKeypoints.getSize(2) ; xyscore++)
+                        valueToPrint += std::to_string(   poseKeypoints[{person, bodyPart, xyscore}]   ) + " ";
                     op::opLog(valueToPrint);
                 }
             }
@@ -237,22 +237,22 @@ public:
             if (!poseHeatMaps.empty())
             {
                 op::opLog("Pose heatmaps size: [" + std::to_string(poseHeatMaps.getSize(0)) + ", "
-                    + std::to_string(poseHeatMaps.getSize(1)) + ", "
-                    + std::to_string(poseHeatMaps.getSize(2)) + "]");
+                        + std::to_string(poseHeatMaps.getSize(1)) + ", "
+                        + std::to_string(poseHeatMaps.getSize(2)) + "]");
                 const auto& faceHeatMaps = datumsPtr->at(0)->faceHeatMaps;
                 op::opLog("Face heatmaps size: [" + std::to_string(faceHeatMaps.getSize(0)) + ", "
-                    + std::to_string(faceHeatMaps.getSize(1)) + ", "
-                    + std::to_string(faceHeatMaps.getSize(2)) + ", "
-                    + std::to_string(faceHeatMaps.getSize(3)) + "]");
+                        + std::to_string(faceHeatMaps.getSize(1)) + ", "
+                        + std::to_string(faceHeatMaps.getSize(2)) + ", "
+                        + std::to_string(faceHeatMaps.getSize(3)) + "]");
                 const auto& handHeatMaps = datumsPtr->at(0)->handHeatMaps;
                 op::opLog("Left hand heatmaps size: [" + std::to_string(handHeatMaps[0].getSize(0)) + ", "
-                    + std::to_string(handHeatMaps[0].getSize(1)) + ", "
-                    + std::to_string(handHeatMaps[0].getSize(2)) + ", "
-                    + std::to_string(handHeatMaps[0].getSize(3)) + "]");
+                        + std::to_string(handHeatMaps[0].getSize(1)) + ", "
+                        + std::to_string(handHeatMaps[0].getSize(2)) + ", "
+                        + std::to_string(handHeatMaps[0].getSize(3)) + "]");
                 op::opLog("Right hand heatmaps size: [" + std::to_string(handHeatMaps[1].getSize(0)) + ", "
-                    + std::to_string(handHeatMaps[1].getSize(1)) + ", "
-                    + std::to_string(handHeatMaps[1].getSize(2)) + ", "
-                    + std::to_string(handHeatMaps[1].getSize(3)) + "]");
+                        + std::to_string(handHeatMaps[1].getSize(1)) + ", "
+                        + std::to_string(handHeatMaps[1].getSize(2)) + ", "
+                        + std::to_string(handHeatMaps[1].getSize(3)) + "]");
             }
         }
         else
@@ -295,7 +295,7 @@ void configureWrapper(op::WrapperT<op::Datum>& opWrapperT)
         const auto keypointScaleMode = op::flagsToScaleMode(FLAGS_keypoint_scale);
         // heatmaps to add
         const auto heatMapTypes = op::flagsToHeatMaps(FLAGS_heatmaps_add_parts, FLAGS_heatmaps_add_bkg,
-            FLAGS_heatmaps_add_PAFs);
+                                                      FLAGS_heatmaps_add_PAFs);
         const auto heatMapScaleMode = op::flagsToHeatMapScaleMode(FLAGS_heatmaps_scale);
         // >1 camera view?
         const auto multipleView = (FLAGS_3d || FLAGS_3d_views > 1);
@@ -313,23 +313,23 @@ void configureWrapper(op::WrapperT<op::Datum>& opWrapperT)
             (float)FLAGS_alpha_pose, (float)FLAGS_alpha_heatmap, FLAGS_part_to_show, op::String(FLAGS_model_folder),
             heatMapTypes, heatMapScaleMode, FLAGS_part_candidates, (float)FLAGS_render_threshold,
             FLAGS_number_people_max, FLAGS_maximize_positives, FLAGS_fps_max, op::String(FLAGS_prototxt_path),
-            op::String(FLAGS_caffemodel_path), (float)FLAGS_upsampling_ratio, enableGoogleLogging };
+            op::String(FLAGS_caffemodel_path), (float)FLAGS_upsampling_ratio, enableGoogleLogging};
         opWrapperT.configure(wrapperStructPose);
         // Face configuration (use op::WrapperStructFace{} to disable it)
         const op::WrapperStructFace wrapperStructFace{
             FLAGS_face, faceDetector, faceNetInputSize,
             op::flagsToRenderMode(FLAGS_face_render, multipleView, FLAGS_render_pose),
-            (float)FLAGS_face_alpha_pose, (float)FLAGS_face_alpha_heatmap, (float)FLAGS_face_render_threshold };
+            (float)FLAGS_face_alpha_pose, (float)FLAGS_face_alpha_heatmap, (float)FLAGS_face_render_threshold};
         opWrapperT.configure(wrapperStructFace);
         // Hand configuration (use op::WrapperStructHand{} to disable it)
         const op::WrapperStructHand wrapperStructHand{
             FLAGS_hand, handDetector, handNetInputSize, FLAGS_hand_scale_number, (float)FLAGS_hand_scale_range,
             op::flagsToRenderMode(FLAGS_hand_render, multipleView, FLAGS_render_pose), (float)FLAGS_hand_alpha_pose,
-            (float)FLAGS_hand_alpha_heatmap, (float)FLAGS_hand_render_threshold };
+            (float)FLAGS_hand_alpha_heatmap, (float)FLAGS_hand_render_threshold};
         opWrapperT.configure(wrapperStructHand);
         // Extra functionality configuration (use op::WrapperStructExtra{} to disable it)
         const op::WrapperStructExtra wrapperStructExtra{
-            FLAGS_3d, FLAGS_3d_min_views, FLAGS_identification, FLAGS_tracking, FLAGS_ik_threads };
+            FLAGS_3d, FLAGS_3d_min_views, FLAGS_identification, FLAGS_tracking, FLAGS_ik_threads};
         opWrapperT.configure(wrapperStructExtra);
         // Output (comment or use default argument to disable any output)
         const op::WrapperStructOutput wrapperStructOutput{
@@ -339,7 +339,7 @@ void configureWrapper(op::WrapperT<op::Datum>& opWrapperT)
             op::String(FLAGS_write_video), FLAGS_write_video_fps, FLAGS_write_video_with_audio,
             op::String(FLAGS_write_heatmaps), op::String(FLAGS_write_heatmaps_format), op::String(FLAGS_write_video_3d),
             op::String(FLAGS_write_video_adam), op::String(FLAGS_write_bvh), op::String(FLAGS_udp_host),
-            op::String(FLAGS_udp_port) };
+            op::String(FLAGS_udp_port)};
         opWrapperT.configure(wrapperStructOutput);
         // No GUI. Equivalent to: opWrapper.configure(op::WrapperStructGui{});
         // Set to single-thread (for sequential processing and/or debugging and/or reducing latency)
@@ -352,8 +352,8 @@ void configureWrapper(op::WrapperT<op::Datum>& opWrapperT)
     }
 }
 
-Eigen::Matrix3Xf convertOPtoEigen(op::Array<float>& opOutput, int pid) {
-    int origSize = opOutput.getSize()[1];
+Eigen::Matrix3Xf convertOPtoEigen(op::Array<float>&opOutput, int pid) {
+        int origSize = opOutput.getSize()[1];
 
     Eigen::Matrix3Xf eigen(opOutput.getSize()[2], opOutput.getSize()[1]);
     for (int r = 0; r < eigen.rows(); r++) {
@@ -366,7 +366,7 @@ Eigen::Matrix3Xf convertOPtoEigen(op::Array<float>& opOutput, int pid) {
 }
 
 //Convert the OpenPose keypoint structure for the 4D association algorithm ([person, joint, xyscore] --> [joint, xyscore, person]) 
-std::vector<Eigen::Matrix3Xf> convertOPtoEigenFullFrame(op::Array<float>& opOutput) {
+std::vector<Eigen::Matrix3Xf> convertOPtoEigenFullFrame(op::Array<float>&opOutput) {
     std::vector<Eigen::Matrix3Xf> eigenKeypointsVector(GetSkelDef(BODY25).jointSize);
     if (!opOutput.empty())
     {
@@ -392,7 +392,7 @@ std::vector<Eigen::Matrix3Xf> convertOPtoEigenFullFrame(op::Array<float>& opOutp
     return eigenKeypointsVector;
 }
 
-std::vector<Eigen::Matrix3Xf> convertOPCandidatesToEigenFullFrame(std::vector<std::vector<std::array<float, 3Ui64>>>& opOutput)
+std::vector<Eigen::Matrix3Xf> convertOPCandidatesToEigenFullFrame(std::vector<std::vector<std::array<float, 3Ui64>>>& opOutput) 
 {
     std::vector<Eigen::Matrix3Xf> eigenKeypointsVector(GetSkelDef(BODY25).jointSize);
     if (!opOutput.empty())
@@ -452,7 +452,7 @@ std::vector<Eigen::MatrixXf> createFakePafsFullFrame(op::Array<float>& opOutput,
             eigenPafVector[pafIdx] = eigenPafOfPair;
         }
     }
-
+    
     return eigenPafVector;
 }
 
@@ -500,7 +500,7 @@ float calcScoreForPafMatrix(float x1, float y1, float x2, float y2, cv::Mat pafM
 
     for (int i = 0; i < pafXs.size(); i++)
     {
-        if ((ys[i] > pafMatX.rows) | (ys[i] > pafMatY.rows) | (xs[i] > pafMatX.cols) | (xs[i] > pafMatY.cols))
+        if ((ys[i] > pafMatX.rows) | (ys[i] > pafMatY.rows) | (xs[i] > pafMatX.cols) | (xs[i] > pafMatY.cols) )
         {
             std::cout << "ERROR: index of heatmap array is out of bounds!!!!!!!!!!!" << std::endl;
             std::cout << "pafMatX.rows: " << pafMatX.rows << std::endl;
@@ -511,7 +511,7 @@ float calcScoreForPafMatrix(float x1, float y1, float x2, float y2, cv::Mat pafM
             std::cout << "xs[i]: " << xs[i] << std::endl;
         }
         //pafXs[i] = pafMatX[{xs[i], ys[i]}];
-        pafXs[i] = pafMatX.at<float>(ys[i], xs[i]);
+        pafXs[i] = pafMatX.at<float>(ys[i],xs[i]);
         //pafYs[i] = pafMatY[{xs[i], ys[i]}];
         pafYs[i] = pafMatY.at<float>(ys[i], xs[i]);
     }
@@ -529,7 +529,7 @@ float calcScoreForPafMatrix(float x1, float y1, float x2, float y2, cv::Mat pafM
     return finalscore;
 }
 
-//TODO: Azok a paf mÃ¡trixok hibÃ¡sak, ahol a heatmapen egy pozitÃ­v Ã©s egy negatÃ­v vektorhalmazzal dolgozunk (egyik tag pl felkar pozitÃ­v, a mÃ¡sik pedig negatÃ­v irÃ¡nyba mutat) 
+//TODO: Azok a paf mátrixok hibásak, ahol a heatmapen egy pozitív és egy negatív vektorhalmazzal dolgozunk (egyik tag pl felkar pozitív, a másik pedig negatív irányba mutat) 
 std::vector<Eigen::MatrixXf> createPafsFullFrame(std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> datum, SkelDef& def, float scale) {
     //Each element of the vector is a matrix that shows where that specific link is (for examle: 0 1 0 row tells us(this is the first row), that the link this matrix represents is given between the first found joint A and the second found joint B)
     std::vector<Eigen::MatrixXf> eigenPafVector(GetSkelDef(BODY25).pafSize);
@@ -538,7 +538,7 @@ std::vector<Eigen::MatrixXf> createPafsFullFrame(std::shared_ptr<std::vector<std
     const auto numberChannels = pafHeatMaps.getSize(0);
     const auto height = pafHeatMaps.getSize(1);
     const auto width = pafHeatMaps.getSize(2);
-
+    
     cv::Mat desiredChannelHeatMapX;
     cv::Mat desiredChannelHeatMapY;
 
@@ -595,7 +595,7 @@ int tutorialApiCpp()
 
         // Configuring OpenPose
         op::opLog("Configuring OpenPose...", op::Priority::High);
-        op::WrapperT<op::Datum> opWrapperT{ op::ThreadManagerMode::Asynchronous };
+        op::WrapperT<op::Datum> opWrapperT{op::ThreadManagerMode::Asynchronous};
         configureWrapper(opWrapperT);
 
         // Start, run, and stop processing - exec() blocks this thread until OpenPose wrapper has finished
@@ -606,11 +606,11 @@ int tutorialApiCpp()
 
         std::string dataset;     // data/*dataset* mappa neve 
         dataset = (!FLAGS_use_webcams) ? "mvmp" : "live";
-        std::map<std::string, Camera> cameras = ParseCameras("C:/Users/admin/Documents/EasyMocap/data/" + dataset + "/calibration.json"); //dataset mappÃ¡ban a calibrÃ¡ciÃ³s json fÃ¡jl
+        std::map<std::string, Camera> cameras = ParseCameras("C:/Users/admin/Documents/EasyMocap/data/" + dataset + "/calibration.json"); //dataset mappában a calibrációs json fájl
         Eigen::Matrix3Xf projs(3, cameras.size() * 4);
         std::vector<cv::Mat> rawImgs(cameras.size());
         std::vector<op::Matrix> rawImgsOpMat(cameras.size());
-        std::vector<cv::VideoCapture> videos(cameras.size());  //annyi videÃ³t vÃ¡r, ahÃ¡ny kamera van
+        std::vector<cv::VideoCapture> videos(cameras.size());  //annyi videót vár, ahány kamera van
         std::vector<op::IpCameraReader*> streams(cameras.size());
         std::vector<std::vector<OpenposeDetection>> seqDetections(cameras.size());
         const SkelDef& skelDef = GetSkelDef(SKEL19);
@@ -622,18 +622,16 @@ int tutorialApiCpp()
         cv::Mat_<float> distCoeff = cv::Mat_<float>::zeros(5, 1);
         if (FLAGS_undist)
         {
-            cv::Mat dist = (cv::Mat_<double>(5, 1) << -4.3733665180754527e-01, 2.1921356552711482e-01, 1.1597452449095796e-03,
-                4.6874816837838441e-03, -5.9483271093969864e-02);
             for (auto const& cam : cameras)
             {
                 std::cout << "Dist coeff of cam " << cam.first << ": " << cam.second.distCoeff << std::endl;
                 std::cout << "Intri matrix of cam " << cam.first << ": " << cam.second.originK << std::endl;
                 std::cout << "Img size of cam  " << cam.first << ": " << cameras.begin()->second.imgSize << std::endl;
                 cv::initUndistortRectifyMap(cam.second.originK, cam.second.distCoeff, cv::Mat(), cam.second.originK, cameras.begin()->second.imgSize, CV_32FC1, map1s[std::stoi(cam.first)], map2s[std::stoi(cam.first)]);
-                //cv::initUndistortRectifyMap(cam.second.originK, dist, cv::Mat(), cam.second.originK, cameras.begin()->second.imgSize, CV_32FC1, map1s[std::stoi(cam.first)], map2s[std::stoi(cam.first)]);
             }
             //TODO: distortion parameters 
-            
+            //cv::Mat dist = (cv::Mat_<double>(5, 1) << -4.3733665180754527e-01, 2.1921356552711482e-01, 1.1597452449095796e-03,
+            //    4.6874816837838441e-03, -5.9483271093969864e-02);
             //cv::initUndistortRectifyMap(cameras.begin()->second.originK, dist, cv::Mat(), cameras.begin()->second.originK, cameras.begin()->second.imgSize, CV_32FC1, map1, map2);
         }
 
@@ -641,14 +639,14 @@ int tutorialApiCpp()
         for (int i = 0; i < cameras.size(); i++) {
 
             auto iter = std::next(cameras.begin(), i);
-
+            
             if (!FLAGS_use_webcams)
             {
-                videos[i] = cv::VideoCapture("C:/Users/admin/Documents/EasyMocap/data/" + dataset + "/video/" + iter->first + ".mp4"); //egy videÃ³ beolvasÃ¡s
-                videos[i].set(cv::CAP_PROP_POS_FRAMES, 0); //elsÃµ frame-el kezdjÃ¼k
+                videos[i] = cv::VideoCapture("C:/Users/admin/Documents/EasyMocap/data/" + dataset + "/video/" + iter->first + ".mp4"); //egy videó beolvasás
+                videos[i].set(cv::CAP_PROP_POS_FRAMES, 0); //elsõ frame-el kezdjük
                 cv::Size imgSize(int(videos[i].get(cv::CAP_PROP_FRAME_WIDTH)), int(videos[i].get(cv::CAP_PROP_FRAME_HEIGHT)));
                 projs.middleCols(4 * i, 4) = iter->second.eiProj;
-                rawImgs[i].create(imgSize, CV_8UC3);   //Ã¼res kÃ©pkockÃ¡k lÃ©trehozÃ¡sa a videÃ³ mÃ©retÃ©vel
+                rawImgs[i].create(imgSize, CV_8UC3);   //üres képkockák létrehozása a videó méretével
                 if (!videos[i].isOpened())
                 {
                     std::cout << "Camera " << i << " hasn't been opened." << std::endl;
@@ -656,18 +654,18 @@ int tutorialApiCpp()
             }
             else
             {
-                //videos[i] = cv::VideoCapture(i); //egy webcam beolvasÃ¡s
-                //streams[i] = new op::WebcamReader(0, op::Point<int>{1280, 720}); //egy webcam beolvasÃ¡s
-                //streams.emplace_back("http://admin:admin123@192.168.1.108/cgi-bin/mjpg/video.cgi?channel=1&subtype=1", op::Point<int>{640, 480}); //ehelyett inkÃ¡bb pointereket hasznÃ¡lok, mert azt mondta a zinternet
+                //videos[i] = cv::VideoCapture(i); //egy webcam beolvasás
+                //streams[i] = new op::WebcamReader(0, op::Point<int>{1280, 720}); //egy webcam beolvasás
+                //streams.emplace_back("http://admin:admin123@192.168.1.108/cgi-bin/mjpg/video.cgi?channel=1&subtype=1", op::Point<int>{640, 480}); //ehelyett inkább pointereket használok, mert azt mondta a zinternet
                 streams[i] = new op::IpCameraReader("http://admin:admin123@" + ips[i] + "/cgi-bin/mjpg/video.cgi?channel=1&subtype=1", op::Point<int>{640, 480});
                 //streams[i] = new op::IpCameraReader("rtsp://admin:admin123@192.168.1.108", op::Point<int>{1280, 720});
-                //videos[i] = cv::VideoCapture("rtsp://admin:admin123@192.168.1.108"); //egy ipcam beolvasÃ¡s
+                //videos[i] = cv::VideoCapture("rtsp://admin:admin123@192.168.1.108"); //egy ipcam beolvasás
                 cv::Size imgSize(int(streams[i]->get(cv::CAP_PROP_FRAME_WIDTH)), int(streams[i]->get(cv::CAP_PROP_FRAME_HEIGHT)));
                 rawImgsOpMat[i] = op::Matrix(imgSize.width, imgSize.height, CV_8UC3);
                 projs.middleCols(4 * i, 4) = iter->second.eiProj;
-                rawImgs[i].create(imgSize, CV_8UC3);   //Ã¼res kÃ©pkockÃ¡k lÃ©trehozÃ¡sa a videÃ³ mÃ©retÃ©vel
-
-                std::cout << "The stream image size is: " << int(videos[i].get(cv::CAP_PROP_FRAME_WIDTH)) << "Ã—" << int(videos[i].get(cv::CAP_PROP_FRAME_HEIGHT)) << std::endl;
+                rawImgs[i].create(imgSize, CV_8UC3);   //üres képkockák létrehozása a videó méretével
+                
+                std::cout << "The stream image size is: " << int(videos[i].get(cv::CAP_PROP_FRAME_WIDTH)) << "×" << int(videos[i].get(cv::CAP_PROP_FRAME_HEIGHT)) << std::endl;
                 if (!streams[i]->isOpened())
                 {
                     std::cout << "Camera " << i << " hasn't been opened." << std::endl;
@@ -682,21 +680,21 @@ int tutorialApiCpp()
         std::vector<std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>>> datums(cameras.size());
         SkelDef def = GetSkelDef(SkelType(BODY25));
         std::vector<OpenposeDetection> frameDetections(cameras.size(), BODY25);
-        const float IOScale = (float)rawImgs[0].rows / std::stof(FLAGS_net_resolution.substr(FLAGS_net_resolution.find('x') + 1));
+        const float IOScale = (float)rawImgs[0].rows / std::stof(FLAGS_net_resolution.substr(FLAGS_net_resolution.find('x') + 1)) ;
 
-        //paramÃ©terek beÃ¡llÃ­tÃ¡sa
-        KruskalAssociater associater(SKEL19, cameras);
-        associater.SetMaxTempDist(0.3f);
-        associater.SetMaxEpiDist(0.15f);
-        associater.SetEpiWeight(1.f);
-        associater.SetTempWeight(0.5f);
-        associater.SetViewWeight(1.f);
-        associater.SetPafWeight(2.f);
-        associater.SetHierWeight(1.f);
-        associater.SetViewCntWelsh(1.0);
-        associater.SetMinCheckCnt(10);
-        associater.SetNodeMultiplex(true);
-        associater.SetNormalizeEdge(true);			// new feature
+        //paraméterek beállítása
+	    KruskalAssociater associater(SKEL19, cameras);
+	    associater.SetMaxTempDist(0.3f);
+	    associater.SetMaxEpiDist(0.15f);
+	    associater.SetEpiWeight(1.f);
+	    associater.SetTempWeight(0.5f);
+	    associater.SetViewWeight(1.f);
+	    associater.SetPafWeight(2.f);
+	    associater.SetHierWeight(1.f);
+	    associater.SetViewCntWelsh(1.0);
+	    associater.SetMinCheckCnt(10);
+	    associater.SetNodeMultiplex(true);
+	    associater.SetNormalizeEdge(true);			// new feature
 
         /*associater.SetMaxTempDist(0.3f);
         associater.SetMaxEpiDist(0.2f);
@@ -710,11 +708,11 @@ int tutorialApiCpp()
         associater.SetNodeMultiplex(true);
         associater.SetNormalizeEdge(true);*/
 
-        SkelPainter skelPainter(SKEL19);
-        skelPainter.rate = 512.f / float(cameras.begin()->second.imgSize.width);
-        SkelFittingUpdater skelUpdater(SKEL19, "C:/Users/admin/Documents/openpose/src4D/SKEL19_new");
-        skelUpdater.SetTemporalTransTerm(1e-1f / std::powf(skelPainter.rate, 2));
-        skelUpdater.SetTemporalPoseTerm(1e-1f / std::powf(skelPainter.rate, 2));
+	    SkelPainter skelPainter(SKEL19);
+	    skelPainter.rate = 512.f / float(cameras.begin()->second.imgSize.width);
+	    SkelFittingUpdater skelUpdater(SKEL19, "C:/Users/admin/Documents/openpose/src4D/SKEL19_new");
+	    skelUpdater.SetTemporalTransTerm(1e-1f / std::powf(skelPainter.rate, 2));
+	    skelUpdater.SetTemporalPoseTerm(1e-1f / std::powf(skelPainter.rate, 2));
 
 
 
@@ -731,7 +729,7 @@ int tutorialApiCpp()
                 }
                 else
                 {
-                    ////TODO: make rawImgs type op::Matrix, make userInputClass.createDatumFromVideo function's input the same -->inkÃ¡bb ne, sokkal tÃ¶bbet kell Ã¡tÃ­rni mÃ¡shol Ã©s OP_OP2CVCONSTMAT csak egy return, elvileg nem rontja a futÃ¡si idÃµt -->mÃ©gis megcsinÃ¡ltam...
+                    ////TODO: make rawImgs type op::Matrix, make userInputClass.createDatumFromVideo function's input the same -->inkább ne, sokkal többet kell átírni máshol és OP_OP2CVCONSTMAT csak egy return, elvileg nem rontja a futási idõt -->mégis megcsináltam...
                     rawImgsOpMat[i] = streams[i]->getFrame();
                     if (FLAGS_undist) cv::remap(OP_OP2CVMAT(rawImgsOpMat[i]), OP_OP2CVMAT(rawImgsOpMat[i]), map1s[i], map2s[i], cv::INTER_LINEAR);
                     //cv::imshow("opmat" + 1, OP_OP2CVMAT(rawImgsOpMat[i]));
@@ -770,7 +768,7 @@ int tutorialApiCpp()
                         //Print pose candidates
                         /*for (int j = 0; j < datumProcessed->at(0)->poseCandidates.size(); j++)
                         {
-
+                            
                             for (int k = 0; k < datumProcessed->at(0)->poseCandidates[j].size(); k++)
                             {
                                 std::cout << "Camera" << i <<" of frame " << framecount << "; Joints " << j << " from candidates: " << std::endl;
@@ -778,7 +776,7 @@ int tutorialApiCpp()
                                 {
                                     std::cout  << datumProcessed->at(0)->poseCandidates[j][k][m] << std::endl;
                                 }
-
+                                
                             }
                         }*/
 
@@ -787,10 +785,10 @@ int tutorialApiCpp()
                         for (auto desiredChannel = 0; desiredChannel < numberChannels; desiredChannel++)
                             userOutputClass.displayHeatmap(datumProcessed, desiredChannel);*/
 
-                            ////TODO: itt "symbol file not loaded" exeptionnel kilÃ©p, ha "datumProcessed->at(0)->poseKeypoints" array Ã¼res (az openpose nem talÃ¡lt jointokat az adott framen)
-                            ////TODO: If no person is detected, frameDetections[i] joints and pafs are vectors with the size 0, so Mapping() can't access the jID-th element --> joints need to be initialized as a vector with the correct size
-                            //frameDetections[i].joints = convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
-                        frameDetections[i].joints = (FLAGS_part_candidates) ? convertOPCandidatesToEigenFullFrame(datumProcessed->at(0)->poseCandidates) : convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
+                        ////TODO: itt "symbol file not loaded" exeptionnel kilép, ha "datumProcessed->at(0)->poseKeypoints" array üres (az openpose nem talált jointokat az adott framen)
+                        ////TODO: If no person is detected, frameDetections[i] joints and pafs are vectors with the size 0, so Mapping() can't access the jID-th element --> joints need to be initialized as a vector with the correct size
+                        //frameDetections[i].joints = convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
+                        frameDetections[i].joints = (FLAGS_part_candidates) ? convertOPCandidatesToEigenFullFrame(datumProcessed->at(0)->poseCandidates): convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
                         /*for (int j = 0; j < frameDetections[i].joints.size(); j++)
                         {
                             std::cout << "Joints" << j << ": " << std::endl << frameDetections[i].joints[j] << std::endl;
@@ -804,23 +802,23 @@ int tutorialApiCpp()
                         {
                             std::cout << "Pafs" << j << " , between joints " << def.pafDict(0, j) << " and " << def.pafDict(1, j) << ": " << std::endl << frameDetections[i].pafs[j] << std::endl;
                         }*/
-                        /* if (datumProcessed->at(0)->poseKeypoints.empty())
-                         {
-                             associater.SetDetection(i, frameDetections[i]);
-                             continue;
-                         }*/
+                       /* if (datumProcessed->at(0)->poseKeypoints.empty())
+                        {
+                            associater.SetDetection(i, frameDetections[i]);
+                            continue;
+                        }*/
 
-                         //if (!FLAGS_use_webcams)
-                        cv::resize(rawImgs[i], rawImgs[i], cv::Size(), skelPainter.rate, skelPainter.rate);
+                        //if (!FLAGS_use_webcams)
+                            cv::resize(rawImgs[i], rawImgs[i], cv::Size(), skelPainter.rate, skelPainter.rate);
                         //else
-                            //TODO: Ez Ã­gy lehet nem rakja vissza a mÃ¡sodik paramÃ©terbe a kÃ©pet, mert kÃ¶zben konvertÃ¡ljuk. SzÃ³val simÃ¡n lehet ezÃ©rt szar...
+                            //TODO: Ez így lehet nem rakja vissza a második paraméterbe a képet, mert közben konvertáljuk. Szóval simán lehet ezért szar...
                         //    cv::resize(OP_OP2CVCONSTMAT(rawImgsOpMat[i]), OP_OP2CVCONSTMAT(rawImgsOpMat[i]), cv::Size(), skelPainter.rate, skelPainter.rate);
-
+                        
                         //std::cout << "Resize for skelPainter done!" << std::endl;
                         auto& mappedDetection = frameDetections[i].Mapping(SKEL19);
                         ////TODO: Runtime error in Mapping() function, probably index out of bounds
                         //std::cout << "Mapping done!" << std::endl;
-                        associater.SetDetection(i, mappedDetection); //Associater osztÃ¡ly m_detections vÃ¡ltozÃ³jÃ¡ban tÃ¡rolja a detectiont
+                        associater.SetDetection(i , mappedDetection); //Associater osztály m_detections változójában tárolja a detectiont
                         //std::cout << "One camera detection setting done!" << std::endl;
                     }
                     else
@@ -832,27 +830,27 @@ int tutorialApiCpp()
 
             if (!userInputClass.isFinished() && !frameDetections.empty())
             {
-                associater.SetSkels3dPrev(skelUpdater.GetSkel3d());   //egy framenek az Ã¶sszes kamera detectionbÃµl (SetDetection) elÃµÃ¡llÃ­tjuk a 3D skeletont 
-                associater.Associate(); //kiszÃ¡moljuk a 3D skeleton paramÃ©tereit
-                skelUpdater.Update(associater.GetSkels2d(), projs);   //UpdateljÃ¼k az eddig meghatÃ¡rozott skeletonokat az Ãºjonnan meghatÃ¡rozottakkal.
-                skels.emplace_back(skelUpdater.GetSkel3d()); //a 3D skeleton adatinak visszaÃ­rÃ¡sa mÃ¡trixba
+                associater.SetSkels3dPrev(skelUpdater.GetSkel3d());   //egy framenek az összes kamera detectionbõl (SetDetection) elõállítjuk a 3D skeletont 
+                associater.Associate(); //kiszámoljuk a 3D skeleton paramétereit
+                skelUpdater.Update(associater.GetSkels2d(), projs);   //Updateljük az eddig meghatározott skeletonokat az újonnan meghatározottakkal.
+                skels.emplace_back(skelUpdater.GetSkel3d()); //a 3D skeleton adatinak visszaírása mátrixba
                 //std::cout << "Skelsize: " << skels.size() << std::endl;
                 //std::cout << "3D detection done!" << std::endl;
             }
-
+            
             //Saving images of detection, association and reprojection of the assembled 3D skeleton
             if (FLAGS_save_images && !userInputClass.isFinished()) {
                 std::cout << "Saving images" << std::endl;
                 cv::Mat detectImg, assocImg, reprojImg;
                 const int layoutCols = 3;
-                ////TODO:Ez itt gond lesz, mert a rawImgsOpMat vÃ¡ltozÃ³kba mentjÃ¼k az ipCameraReader-bÃµl Ã©rkezÃµ frameket. Ãgy ez csak a videÃ³s megoldÃ¡sra mÃ»kÃ¶dik --> de, mert mostmÃ¡r a getFramenÃ©l belerakjuk a rawImgs-be is a kÃ©pet, hogy meglegyen cv::Mat-ban is 
+                ////TODO:Ez itt gond lesz, mert a rawImgsOpMat változókba mentjük az ipCameraReader-bõl érkezõ frameket. Így ez csak a videós megoldásra mûködik --> de, mert mostmár a getFramenél belerakjuk a rawImgs-be is a képet, hogy meglegyen cv::Mat-ban is 
                 std::vector<cv::Rect> rois = SkelPainter::MergeImgs(rawImgs, detectImg, layoutCols,
-                    { rawImgs.begin()->cols, rawImgs.begin()->rows }); //az Ã¶sszes kamerakÃ©p Ã¶sszeillesztÃ©se egy gridbe (detectImg), erre rajzoljuk majd a vÃ©geredmÃ©nyt. Rois: A grid kis kÃ©peinek befoglalÃ³ tÃ©glalapjainak koordinÃ¡tÃ¡i (nagy kÃ©p almÃ¡trixa)
+                    { rawImgs.begin()->cols, rawImgs.begin()->rows }); //az összes kamerakép összeillesztése egy gridbe (detectImg), erre rajzoljuk majd a végeredményt. Rois: A grid kis képeinek befoglaló téglalapjainak koordinátái (nagy kép almátrixa)
                 detectImg.copyTo(assocImg);
                 detectImg.copyTo(reprojImg);
 
 #pragma omp parallel for
-                for (int view = 0; view < cameras.size(); view++) {   //a vissza projektÃ¡lt skeletonok visszarajzolÃ¡sa az egyes kÃ©pekre (mÃ©g mindig frame-enkÃ©nt)
+                for (int view = 0; view < cameras.size(); view++) {   //a vissza projektált skeletonok visszarajzolása az egyes képekre (még mindig frame-enként)
                     const OpenposeDetection detection = frameDetections[view].Mapping(SKEL19);
                     skelPainter.DrawDetect(detection.joints, detection.pafs, detectImg(rois[view]));
                     for (const auto& skel2d : associater.GetSkels2d())
@@ -862,7 +860,7 @@ int tutorialApiCpp()
                         skelPainter.DrawReproj(skel3d.second, projs.middleCols(4 * view, 4), reprojImg(rois[view]), skel3d.first);
                 }
 
-                //a frame kimentÃ©se kÃ©pbe
+                //a frame kimentése képbe
                 //cv::imwrite("output/detect93u/" + std::to_string(framecount) + ".jpg", detectImg);
                 //cv::imwrite("output/assoc93u/" + std::to_string(framecount) + ".jpg", assocImg);
                 //cv::imwrite("output/reproj93u/" + std::to_string(framecount) + ".jpg", reprojImg);
@@ -872,17 +870,17 @@ int tutorialApiCpp()
             }
 
             std::cout << "------ End of processing frame " << std::to_string(framecount) << " ------" << std::endl;
-
-
+        
+            
             framecount++;
 
             //This can decrease performance, but it hasn't been checked yet
             if (kbhit() | framecount >= 300)
                 break;
-
+            
         }//end while
 
-        SerializeSkels(skels, "output/skel.txt"); //a 3D skeleton kiÃ­rÃ¡sa         
+        SerializeSkels(skels, "output/skel.txt"); //a 3D skeleton kiírása         
 
         op::opLog("Stopping thread(s)", op::Priority::High);
         opWrapperT.stop();
@@ -891,9 +889,9 @@ int tutorialApiCpp()
         op::printTime(opTimer, "OpenPose demo successfully finished. Total time: ", " seconds.", op::Priority::High);
 
         //Config:
-        // System GPU: 1Ã— NVidia GTX 1650
+        // System GPU: 1× NVidia GTX 1650
         // dataset: mvmp
-        // net_resolution: -1Ã—176
+        // net_resolution: -1×176
         // Assoc. algorithm: OP
         // 
         //Performance:
@@ -901,9 +899,9 @@ int tutorialApiCpp()
         // Without image saving: ~2.05 fps (300frame/149s) 
 
         //Config:
-        // System GPU: 1Ã— NVidia GTX 1650
+        // System GPU: 1× NVidia GTX 1650
         // dataset: mvmp
-        // net_resolution: -1Ã—176
+        // net_resolution: -1×176
         // Assoc. algorithm: 4D assoc
         // 
         //Performance:
@@ -911,45 +909,45 @@ int tutorialApiCpp()
         // Without image saving: ~1.997 fps (300frame/151.7s)
 
         //Config:
-        // System GPU: 1Ã— NVidia GTX 1650
+        // System GPU: 1× NVidia GTX 1650
         // dataset: shelf
-        // net_resolution: -1Ã—288
+        // net_resolution: -1×288
         // Assoc. algorithm: OP
         // 
         //Performance:
         // Without image saving: ~1.35 fps (300frame/222s)
 
         //Config:
-        // System GPU: 1Ã— NVidia GTX 1650
+        // System GPU: 1× NVidia GTX 1650
         // dataset: shelf
-        // net_resolution: -1Ã—288
+        // net_resolution: -1×288
         // Assoc. algorithm: 4D assoc
         // 
         //Performance:
         // Without image saving: ~1.19 fps (300frame/ 252s)
 
         //Config:
-        // System GPU: 1Ã— NVidia RTX 2060
+        // System GPU: 1× NVidia RTX 2060
         // dataset: live
-        // net_resolution: -1Ã—176
+        // net_resolution: -1×176
         // Assoc. algorithm: OP
         // 
         //Performance:
         // Without image saving: ~3.2 fps (300frame/ 93s)
 
         //Config:
-        // System GPU: 1Ã— NVidia RTX 2060
+        // System GPU: 1× NVidia RTX 2060
         // dataset: live
-        // net_resolution: -1Ã—176
+        // net_resolution: -1×176
         // Assoc. algorithm: 4D assoc
         // 
         //Performance:
         // Without image saving: ~3.2 fps (300frame/ 94s)
 
         //Config:
-        // System GPU: 1Ã— NVidia RTX 2060
+        // System GPU: 1× NVidia RTX 2060
         // dataset: mvmp
-        // net_resolution: -1Ã—176
+        // net_resolution: -1×176
         // Assoc. algorithm: 4D assoc
         // 
         //Performance:
@@ -966,7 +964,7 @@ int tutorialApiCpp()
     }
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     // Parsing command line flags
     gflags::ParseCommandLineFlags(&argc, &argv, true);

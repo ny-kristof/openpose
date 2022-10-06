@@ -47,6 +47,7 @@ public:
     {
         if (mImageFiles.empty())
             op::error("No images found on: " + directoryPath, __LINE__, __FUNCTION__, __FILE__);
+        stream = new op::IpCameraReader("http://admin:admin123@169.254.150.104/cgi-bin/mjpg/video.cgi?channel=1&subtype=1", op::Point<int>{640, 480});
     }
 
     void initializationOnThread() {}
@@ -56,7 +57,7 @@ public:
         try
         {
             // Close program when empty frame
-            if (mImageFiles.size() <= mCounter)
+            if (1200 <= mCounter)
             {
                 op::opLog(
                     "Last frame read and added to queue. Closing program after it is processed.", op::Priority::High);
@@ -74,8 +75,10 @@ public:
                 datumPtr = std::make_shared<UserDatum>();
 
                 // Fill datum
-                const cv::Mat cvInputData = cv::imread(mImageFiles.at(mCounter++));
-                datumPtr->cvInputData = OP_CV2OPCONSTMAT(cvInputData);
+                /*const cv::Mat cvInputData = cv::imread(mImageFiles.at(mCounter++));
+                datumPtr->cvInputData = OP_CV2OPCONSTMAT(cvInputData);*/
+                datumPtr->cvInputData = stream->getFrame();
+                std::cout << mCounter++ << std::endl;
 
                 // If empty frame -> return nullptr
                 if (datumPtr->cvInputData.empty())
@@ -101,6 +104,7 @@ public:
 private:
     const std::vector<std::string> mImageFiles;
     unsigned long long mCounter;
+    op::IpCameraReader* stream;
 };
 
 // This worker will just invert the image
@@ -367,6 +371,15 @@ int main(int argc, char *argv[])
 {
     // Parsing command line flags
     gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+    FLAGS_net_resolution = "-1x176";
+    FLAGS_part_candidates = false;
+
+    FLAGS_part_to_show = 0;
+    FLAGS_heatmaps_add_PAFs = false;
+    FLAGS_heatmaps_add_bkg = false;
+    FLAGS_heatmaps_add_parts = false;
+    FLAGS_heatmaps_scale = 0; //0 --> in range [-1, 1] ; 1 --> in range [0, 1] ; 2(default) --> in range [0 , 255]
 
     // Running tutorialApiCpp
     return tutorialApiCpp();
