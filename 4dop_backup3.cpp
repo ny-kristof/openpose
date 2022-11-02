@@ -12,8 +12,6 @@
 #include <Eigen/Eigen>
 #include <conio.h>
 
-#include <thread>
-
 // Third-party dependencies
 #include <opencv2/opencv.hpp>
 // Command-line user interface
@@ -41,9 +39,6 @@ DEFINE_bool(use_webcams, false,
 //Undistort the input images
 DEFINE_bool(undist, false,
     "Wether to undistort the input images. The distortion parameters have to be given");
-//Use second computer
-DEFINE_bool(sharedWork, false,
-    "Wether to run the program on two separate PC-s. Run ClientCode on the other machine!");
 
 
 // This worker will just read and return all the basic image file formats in a directory
@@ -115,203 +110,6 @@ private:
 
     bool mClosed;
 };
-
-class Server
-{
-public:
-    Server() {};
-    Server(int numRemoteCams)
-    {
-        stop = false;
-        remoteKeypoints.resize(numRemoteCams);
-        client = initSocket();
-        if ((client != INVALID_SOCKET))
-        {
-            t1 = std::thread(&on_client_connect, client, std::ref(remoteKeypoints));
-        }
-    }
-    
-    SOCKET client;
-    std::vector<op::Array<float>> remoteKeypoints;
-    bool stop;
-    std::thread t1;
-
-    SOCKET initSocket()
-    {
-        WSADATA wsa_data;
-        SOCKADDR_IN server_addr, client_addr;
-
-        WSAStartup(MAKEWORD(2, 2), &wsa_data);
-        const auto server = socket(AF_INET, SOCK_STREAM, 0);
-
-        server_addr.sin_addr.s_addr = INADDR_ANY;
-        server_addr.sin_family = AF_INET;
-        server_addr.sin_port = htons(5555);
-
-        ::bind(server, reinterpret_cast<SOCKADDR*>(&server_addr), sizeof(server_addr));
-        listen(server, 0);
-
-        std::cout << "Listening for incoming connections..." << std::endl;
-
-        int client_addr_size = sizeof(client_addr);
-
-        SOCKET client;
-        client = accept(server, reinterpret_cast<SOCKADDR*>(&client_addr), &client_addr_size);
-
-        return client;
-    }
-
-private:
-    void on_client_connect(SOCKET client, std::vector<op::Array<float>> &keypointsvec)
-    {
-        std::cout << "Client connected!" << std::endl;
-        char buffer[2048]; //ennyi karaktert olvas ki a szerverről
-        while (true)
-        {
-            int numcam = 0;
-            int numrec = recv(client, buffer, sizeof(buffer), 0);
-            if (numrec == 0)
-            {
-                std::cerr << "Received 0 bytes!!" << std::endl;
-                break;
-            }
-            std::cout << "Client says: " << buffer << std::endl;
-
-            numcam = buffer[0] - '0';
-            std::string msg(buffer);
-            msg.erase(0, 0);
-            cv::Mat keypoints = msgToCVMat(msg);
-            switch (numcam)
-            {
-                case 2:
-                    keypointsvec[0].setFrom(OP_CV2OPMAT(keypoints));
-                    break;
-                case 3:
-                    keypointsvec[1].setFrom(OP_CV2OPMAT(keypoints));
-                    break;
-                default:
-                    std::cerr << "Error: client defined the name of the camera wrong!" << std::endl;
-                    break;
-            }
-
-           /* std::cout << "cvMat Keypoints of cam" << numcam << ": " << std::endl;
-            for (int i = 0; i < keypoints.size[0]; i++)
-            {
-                for (int j = 0; j < keypoints.size[1]; j++)
-                {
-                    for (int k = 0; k < keypoints.size[2]; k++)
-                    {
-                        std::cout << keypoints.at<float>(i, j, k) << " ";
-                    }
-                    std::cout << std::endl;
-                }
-                std::cout << std::endl;
-            }*/
-
-            //cout << "Last score of person 0: " << keypoints.at<float>(1, 0, 0) << endl;
-            //readnum = atoi(buffer);
-            ZeroMemory(&buffer, sizeof(buffer));
-            if (stop) break;
-        }
-        closesocket(client);
-        WSACleanup();
-        std::cout << "Client disconnected." << std::endl;
-    }
-
-    cv::Mat msgToCVMat(std::string msg)
-    {
-        //string msg(buffer);
-        std::string delimiter = "\r\n\r\n";
-        std::string delimiter2 = "\r\n";
-        std::string delimiter3 = " ";
-        std::vector<std::string> people;
-        std::string temp;
-        std::string joint;
-        std::string coord;
-
-        cv::Mat person(cv::Size(3, 25), CV_32F);
-        std::vector<cv::Mat> personvec;
-
-        msg.erase(0, 23); //delete Array<T>.toString():
-        msg.erase(msg.length()-4 , msg.length()-1); //delete \n\r\n\r at the end
-
-
-        //extract people
-        size_t pos = 0;
-        while ((pos = msg.find(delimiter)) != std::string::npos) {
-            temp = msg.substr(0, pos);
-            people.push_back(temp);
-            msg.erase(0, pos + delimiter.length());
-        }
-        people.push_back(msg);
-
-        /*for (int i = 0; i < people.size(); i++)
-        {
-            std::cout << "Person" << i << ": " << people[i] << std::endl;
-        }*/
-
-        //extract joints
-        for (int i = 0; i < people.size(); i++)
-        {
-            size_t pos = 0;
-            int jid = 0;
-            while ((pos = people[i].find(delimiter2)) != std::string::npos) {
-                joint = people[i].substr(0, pos);
-                size_t pos2 = 0;
-                int xys = 0;
-                while ((pos2 = joint.find(delimiter3)) != std::string::npos) {
-                    coord = joint.substr(0, pos2);
-                    person.at<float>(jid, xys) = stof(coord);
-                    joint.erase(0, pos2 + delimiter3.length());
-                    xys++;
-                }
-                person.at<float>(jid, xys) = stof(joint);
-                people[i].erase(0, pos + delimiter2.length());
-                jid++;
-            }
-            size_t pos2 = 0;
-            int xys = 0;
-            while ((pos2 = people[i].find(delimiter3)) != std::string::npos) {
-                coord = people[i].substr(0, pos2);
-                person.at<float>(jid, xys) = std::stof(coord.c_str());
-                people[i].erase(0, pos2 + delimiter3.length());
-                xys++;
-            }
-            person.at<float>(jid, xys) = std::stof(people[i].c_str());
-            personvec.push_back(person.clone());
-
-            /*cout << "Personvec" << i <<  ": ";
-            for (int j = 0; j < personvec[i].rows; j++)
-            {
-                for (int k = 0; k < personvec[0].cols; k++)
-                {
-                    cout << personvec[i].at<float>(j, k) << " ";
-                }
-                cout << endl;
-            }*/
-
-            //cout << "last score: " << person.at<float>(24, 2) << endl;
-        }
-
-        //vector to one 3D Mat
-        int dims[3] = { personvec.size(),  person.rows, person.cols };
-        cv::Mat keypoints(3, dims, CV_32F);
-        for (int i = 0; i < personvec.size(); ++i)
-        {
-            float* ptr = &keypoints.at<float>(i, 0, 0); // pointer to first element of slice i
-
-            cv::Mat destination(person.rows, person.cols, CV_32F, (void*)ptr); // no data copy, see documentation
-
-            //cout << "Personvec element: " << personvec[i].at<float>(24, 2) << endl;
-
-            personvec[i].copyTo(destination);
-        }
-
-        return keypoints;
-    }
-
-};
-
 
 // This worker will just read and return all the jpg files in a directory
 class UserOutputClass
@@ -818,9 +616,6 @@ int tutorialApiCpp()
         const SkelDef& skelDef = GetSkelDef(SKEL19);
         std::vector<std::map<int, Eigen::Matrix4Xf>> skels; //A vektor minden eleme egy frame skeletonjait tartalmazza
 
-        int numLocalCam = 2;
-        //std::vector<op::Array<float>> remoteKeypoints(cameras.size() - numLocalCam);
-        Server server;
         std::vector<std::string> ips{ "169.254.150.101","169.254.150.102","169.254.150.103","169.254.150.104" };
         std::vector<cv::Mat> map1s(cameras.size());
         std::vector<cv::Mat> map2s(cameras.size());
@@ -838,7 +633,7 @@ int tutorialApiCpp()
                 //cv::initUndistortRectifyMap(cam.second.originK, dist, cv::Mat(), cam.second.originK, cameras.begin()->second.imgSize, CV_32FC1, map1s[std::stoi(cam.first)], map2s[std::stoi(cam.first)]);
             }
             //TODO: distortion parameters 
-
+            
             //cv::initUndistortRectifyMap(cameras.begin()->second.originK, dist, cv::Mat(), cameras.begin()->second.originK, cameras.begin()->second.imgSize, CV_32FC1, map1, map2);
         }
 
@@ -922,7 +717,7 @@ int tutorialApiCpp()
         skelUpdater.SetTemporalPoseTerm(1e-1f / std::powf(skelPainter.rate, 2));
 
 
-        if(FLAGS_sharedWork) server = Server(cameras.size() - numLocalCam);
+
         int framecount = 0;
         while (!userInputClass.isFinished()) {
 #pragma omp parallel for
@@ -948,129 +743,92 @@ int tutorialApiCpp()
                 }
             }
 
-            if(!FLAGS_sharedWork)
+
+            for (int i = 0; i < cameras.size(); i++)
             {
-                for (int i = 0; i < cameras.size(); i++)
+                std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> datumToProcess;
+                datumToProcess = (!FLAGS_use_webcams) ? userInputClass.createDatum(rawImgs[i]) : datumToProcess = userInputClass.createDatum(rawImgsOpMat[i]);
+
+                if (datumToProcess != nullptr)
                 {
-                    std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> datumToProcess;
-                    datumToProcess = (!FLAGS_use_webcams) ? userInputClass.createDatum(rawImgs[i]) : datumToProcess = userInputClass.createDatum(rawImgsOpMat[i]);
-
-                    if (datumToProcess != nullptr)
+                    auto successfullyEmplaced = opWrapperT.waitAndEmplace(datumToProcess);
+                    std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> datumProcessed;
+                    //std::cout << "successfullyEmplaced: " << successfullyEmplaced << std::endl;
+                    auto successfullyPopped = opWrapperT.waitAndPop(datumProcessed);
+                    //std::cout << "successfullyPopped: " << successfullyPopped << std::endl;
+                    if (successfullyEmplaced && successfullyPopped)
                     {
-                        auto successfullyEmplaced = opWrapperT.waitAndEmplace(datumToProcess);
-                        std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> datumProcessed;
-                        //std::cout << "successfullyEmplaced: " << successfullyEmplaced << std::endl;
-                        auto successfullyPopped = opWrapperT.waitAndPop(datumProcessed);
-                        //std::cout << "successfullyPopped: " << successfullyPopped << std::endl;
-                        if (successfullyEmplaced && successfullyPopped)
+                        //std::cout << "No Person detected: " << datumProcessed->at(0)->poseKeypoints.empty() << std::endl;
+                        if (!FLAGS_no_display)
                         {
-                            //std::cout << "No Person detected: " << datumProcessed->at(0)->poseKeypoints.empty() << std::endl;
-                            if (!FLAGS_no_display)
-                            {
-                                userWantsToExit = userOutputClass.display(datumProcessed);
-                                if (userWantsToExit)
-                                    userInputClass.exit();
-                                //std::cout << "Display done!"  << std::endl;
-                            }
+                            userWantsToExit = userOutputClass.display(datumProcessed);
+                            if (userWantsToExit)
+                                userInputClass.exit();
+                            //std::cout << "Display done!"  << std::endl;
+                        }
 
-                            //Print pose candidates
-                            /*for (int j = 0; j < datumProcessed->at(0)->poseCandidates.size(); j++)
-                            {
+                        //Print pose candidates
+                        /*for (int j = 0; j < datumProcessed->at(0)->poseCandidates.size(); j++)
+                        {
 
-                                for (int k = 0; k < datumProcessed->at(0)->poseCandidates[j].size(); k++)
+                            for (int k = 0; k < datumProcessed->at(0)->poseCandidates[j].size(); k++)
+                            {
+                                std::cout << "Camera" << i <<" of frame " << framecount << "; Joints " << j << " from candidates: " << std::endl;
+                                for (int m = 0; m < datumProcessed->at(0)->poseCandidates[j][k].size(); m++)
                                 {
-                                    std::cout << "Camera" << i <<" of frame " << framecount << "; Joints " << j << " from candidates: " << std::endl;
-                                    for (int m = 0; m < datumProcessed->at(0)->poseCandidates[j][k].size(); m++)
-                                    {
-                                        std::cout  << datumProcessed->at(0)->poseCandidates[j][k][m] << std::endl;
-                                    }
-
+                                    std::cout  << datumProcessed->at(0)->poseCandidates[j][k][m] << std::endl;
                                 }
-                            }*/
 
-                            //Show each heatmap if added by flags
-                            /*const auto numberChannels = datumProcessed->at(0)->poseHeatMaps.getSize(0);
-                            for (auto desiredChannel = 0; desiredChannel < numberChannels; desiredChannel++)
-                                userOutputClass.displayHeatmap(datumProcessed, desiredChannel);*/
-
-                                ////TODO: itt "symbol file not loaded" exeptionnel kilép, ha "datumProcessed->at(0)->poseKeypoints" array üres (az openpose nem talált jointokat az adott framen)
-                                ////TODO: If no person is detected, frameDetections[i] joints and pafs are vectors with the size 0, so Mapping() can't access the jID-th element --> joints need to be initialized as a vector with the correct size
-                                //frameDetections[i].joints = convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
-                            frameDetections[i].joints = (FLAGS_part_candidates) ? convertOPCandidatesToEigenFullFrame(datumProcessed->at(0)->poseCandidates) : convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
-                            /*for (int j = 0; j < frameDetections[i].joints.size(); j++)
-                            {
-                                std::cout << "Joints" << j << ": " << std::endl << frameDetections[i].joints[j] << std::endl;
-                            }*/
-                            //frameDetections[i].pafs = createFakePafsFullFrame(datumProcessed->at(0)->poseKeypoints, def);
-                            frameDetections[i].pafs = (FLAGS_part_candidates) ? createPafsFullFrame(datumProcessed, def, IOScale) : createFakePafsFullFrame(datumProcessed->at(0)->poseKeypoints, def);
-
-                            //std::cout << "Conversion to Eigen/4Dassoc done!" << std::endl;
-
-                            /*for (int j = 0; j < frameDetections[i].pafs.size(); j++)
-                            {
-                                std::cout << "Pafs" << j << " , between joints " << def.pafDict(0, j) << " and " << def.pafDict(1, j) << ": " << std::endl << frameDetections[i].pafs[j] << std::endl;
-                            }*/
-                            /* if (datumProcessed->at(0)->poseKeypoints.empty())
-                             {
-                                 associater.SetDetection(i, frameDetections[i]);
-                                 continue;
-                             }*/
-
-                             //if (!FLAGS_use_webcams)
-                            cv::resize(rawImgs[i], rawImgs[i], cv::Size(), skelPainter.rate, skelPainter.rate);
-                            //else
-                                //TODO: Ez így lehet nem rakja vissza a második paraméterbe a képet, mert közben konvertáljuk. Szóval simán lehet ezért szar...
-                            //    cv::resize(OP_OP2CVCONSTMAT(rawImgsOpMat[i]), OP_OP2CVCONSTMAT(rawImgsOpMat[i]), cv::Size(), skelPainter.rate, skelPainter.rate);
-
-                            //std::cout << "Resize for skelPainter done!" << std::endl;
-                            auto& mappedDetection = frameDetections[i].Mapping(SKEL19);
-                            ////TODO: Runtime error in Mapping() function, probably index out of bounds
-                            //std::cout << "Mapping done!" << std::endl;
-                            associater.SetDetection(i, mappedDetection); //Associater osztály m_detections változójában tárolja a detectiont
-                            //std::cout << "One camera detection setting done!" << std::endl;
-                        }
-                        else
-                        {
-                            op::opLog("Processed datum could not be emplaced.", op::Priority::High);
-                        }
-                    }
-                }
-            } //end if(!sharedWork)
-            else
-            {
-                for (int i = 0; i < cameras.size(); i++)
-                {
-                    if (i < numLocalCam)
-                    {
-                        std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> datumToProcess;
-                        datumToProcess = (!FLAGS_use_webcams) ? userInputClass.createDatum(rawImgs[i]) : datumToProcess = userInputClass.createDatum(rawImgsOpMat[i]);
-                        if (datumToProcess != nullptr)
-                        {
-                            auto successfullyEmplaced = opWrapperT.waitAndEmplace(datumToProcess);
-                            std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> datumProcessed;
-                            auto successfullyPopped = opWrapperT.waitAndPop(datumProcessed);
-                            if (successfullyEmplaced && successfullyPopped)
-                            {
-                                frameDetections[i].joints = (FLAGS_part_candidates) ? convertOPCandidatesToEigenFullFrame(datumProcessed->at(0)->poseCandidates) : convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
-                                frameDetections[i].pafs = (FLAGS_part_candidates) ? createPafsFullFrame(datumProcessed, def, IOScale) : createFakePafsFullFrame(datumProcessed->at(0)->poseKeypoints, def);
                             }
-                            else
-                            {
-                                op::opLog("Processed datum could not be emplaced.", op::Priority::High);
-                            }
-                        }
+                        }*/
+
+                        //Show each heatmap if added by flags
+                        /*const auto numberChannels = datumProcessed->at(0)->poseHeatMaps.getSize(0);
+                        for (auto desiredChannel = 0; desiredChannel < numberChannels; desiredChannel++)
+                            userOutputClass.displayHeatmap(datumProcessed, desiredChannel);*/
+
+                            ////TODO: itt "symbol file not loaded" exeptionnel kilép, ha "datumProcessed->at(0)->poseKeypoints" array üres (az openpose nem talált jointokat az adott framen)
+                            ////TODO: If no person is detected, frameDetections[i] joints and pafs are vectors with the size 0, so Mapping() can't access the jID-th element --> joints need to be initialized as a vector with the correct size
+                            //frameDetections[i].joints = convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
+                        frameDetections[i].joints = (FLAGS_part_candidates) ? convertOPCandidatesToEigenFullFrame(datumProcessed->at(0)->poseCandidates) : convertOPtoEigenFullFrame(datumProcessed->at(0)->poseKeypoints);
+                        /*for (int j = 0; j < frameDetections[i].joints.size(); j++)
+                        {
+                            std::cout << "Joints" << j << ": " << std::endl << frameDetections[i].joints[j] << std::endl;
+                        }*/
+                        //frameDetections[i].pafs = createFakePafsFullFrame(datumProcessed->at(0)->poseKeypoints, def);
+                        frameDetections[i].pafs = (FLAGS_part_candidates) ? createPafsFullFrame(datumProcessed, def, IOScale) : createFakePafsFullFrame(datumProcessed->at(0)->poseKeypoints, def);
+
+                        //std::cout << "Conversion to Eigen/4Dassoc done!" << std::endl;
+
+                        /*for (int j = 0; j < frameDetections[i].pafs.size(); j++)
+                        {
+                            std::cout << "Pafs" << j << " , between joints " << def.pafDict(0, j) << " and " << def.pafDict(1, j) << ": " << std::endl << frameDetections[i].pafs[j] << std::endl;
+                        }*/
+                        /* if (datumProcessed->at(0)->poseKeypoints.empty())
+                         {
+                             associater.SetDetection(i, frameDetections[i]);
+                             continue;
+                         }*/
+
+                         //if (!FLAGS_use_webcams)
+                        cv::resize(rawImgs[i], rawImgs[i], cv::Size(), skelPainter.rate, skelPainter.rate);
+                        //else
+                            //TODO: Ez így lehet nem rakja vissza a második paraméterbe a képet, mert közben konvertáljuk. Szóval simán lehet ezért szar...
+                        //    cv::resize(OP_OP2CVCONSTMAT(rawImgsOpMat[i]), OP_OP2CVCONSTMAT(rawImgsOpMat[i]), cv::Size(), skelPainter.rate, skelPainter.rate);
+
+                        //std::cout << "Resize for skelPainter done!" << std::endl;
+                        auto& mappedDetection = frameDetections[i].Mapping(SKEL19);
+                        ////TODO: Runtime error in Mapping() function, probably index out of bounds
+                        //std::cout << "Mapping done!" << std::endl;
+                        associater.SetDetection(i, mappedDetection); //Associater osztály m_detections változójában tárolja a detectiont
+                        //std::cout << "One camera detection setting done!" << std::endl;
                     }
                     else
                     {
-                        frameDetections[i].joints = convertOPtoEigenFullFrame(server.remoteKeypoints[i-numLocalCam]);
-                        frameDetections[i].pafs = createFakePafsFullFrame(server.remoteKeypoints[i-numLocalCam], def);
+                        op::opLog("Processed datum could not be emplaced.", op::Priority::High);
                     }
-                    cv::resize(rawImgs[i], rawImgs[i], cv::Size(), skelPainter.rate, skelPainter.rate);
-                    auto& mappedDetection = frameDetections[i].Mapping(SKEL19);
-                    associater.SetDetection(i, mappedDetection);
                 }
             }
-            
 
             if (!userInputClass.isFinished() && !frameDetections.empty())
             {
@@ -1228,7 +986,6 @@ int main(int argc, char* argv[])
     //FLAGS_write_images = "C:\\Users\\nykri\\Documents\\3Dhuman\\openpose\\examples\\media2\\output";
     FLAGS_undist = true;
 
-    FLAGS_sharedWork = false;
 
 
     // Running tutorialApiCpp

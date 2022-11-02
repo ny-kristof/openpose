@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 {
     // Parsing command line flags
     gflags::ParseCommandLineFlags(&argc, &argv, true);
-    FLAGS_ip_camera = "http://admin:admin123@169.254.150.104/cgi-bin/mjpg/video.cgi?channel=1&subtype=1";
+    //FLAGS_ip_camera = "http://admin:admin123@169.254.150.104/cgi-bin/mjpg/video.cgi?channel=1&subtype=1";
     FLAGS_net_resolution = "-1x176";
     //FLAGS_net_resolution = "320x176";
     //FLAGS_heatmaps_add_bkg = true; //nem lassította egyáltalán

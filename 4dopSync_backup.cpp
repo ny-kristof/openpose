@@ -511,6 +511,7 @@ public:
                 frameDetection.joints = (FLAGS_part_candidates) ? convertOPCandidatesToEigenFullFrame(datumsPtr->at(0)->poseCandidates) : convertOPtoEigenFullFrame(datumsPtr->at(0)->poseKeypoints);
                 frameDetection.pafs = (FLAGS_part_candidates) ? createPafsFullFrame(datumsPtr, def, IOScale) : createFakePafsFullFrame(datumsPtr->at(0)->poseKeypoints, def);
                 auto& mappedDetection = frameDetection.Mapping(SKEL19);
+				//TODO: getNumCam hibás, mert nem független a preprocessintől. UserDatum-mal kell dolgozni és annak egy változója mondja meg, hogy melyik kameránál járunk.
                 associater.SetDetection(uInput->getNumCam(), mappedDetection);
                 rawImgs[uInput->getNumCam()] = cvMat;
                 cv::resize(rawImgs[uInput->getNumCam()], rawImgs[uInput->getNumCam()], cv::Size(), skelPainter.rate, skelPainter.rate);
