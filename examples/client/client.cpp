@@ -5,6 +5,8 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
+#include <winsock2.h>
+
 // Third-party dependencies
 #include <opencv2/opencv.hpp>
 // Command-line user interface
@@ -17,7 +19,7 @@
 
 #include "camera.cpp"
 
-#include <winsock2.h>
+
 #include <ws2tcpip.h>
 #include <tchar.h>
 

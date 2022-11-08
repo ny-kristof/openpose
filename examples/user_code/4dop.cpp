@@ -12,6 +12,7 @@
 #include <Eigen/Eigen>
 #include <conio.h>
 
+#pragma comment(lib, "Ws2_32.lib")
 #include <thread>
 
 // Third-party dependencies
@@ -123,12 +124,22 @@ public:
     Server(int numRemoteCams)
     {
         stop = false;
-        remoteKeypoints.resize(numRemoteCams);
+        //remoteKeypoints.resize(numRemoteCams);
+        std::cout << "remotekeypoints size: " << remoteKeypoints.size() << std::endl;
+        op::Array<float> arrayToPush;
+        for (int i = 0; i < numRemoteCams; i++)
+        {
+            remoteKeypoints.push_back(op::Array<float>({ 1, 25, 3 }));
+        }
+        std::cout << "remotekeypoints size: " << remoteKeypoints.size() << std::endl;
+        std::cout << "opMat Keypoints size 0: " << remoteKeypoints[0].getSize(0) << std::endl;
+        std::cout << "opMat Keypoints size 1: " << remoteKeypoints[0].getSize(1) << std::endl;
+        std::cout << "opMat Keypoints size 2: " << remoteKeypoints[0].getSize(2) << std::endl;
         client = initSocket();
-        if ((client != INVALID_SOCKET))
+        /*if ((client != INVALID_SOCKET))
         {
             t1 = std::thread(&on_client_connect, client, std::ref(remoteKeypoints));
-        }
+        }*/
     }
     
     SOCKET client;
@@ -161,7 +172,7 @@ public:
         return client;
     }
 
-private:
+//private:
     void on_client_connect(SOCKET client, std::vector<op::Array<float>> &keypointsvec)
     {
         std::cout << "Client connected!" << std::endl;
@@ -180,33 +191,60 @@ private:
             numcam = buffer[0] - '0';
             std::string msg(buffer);
             msg.erase(0, 0);
-            cv::Mat keypoints = msgToCVMat(msg);
+            std::cout << "start convert" << std::endl;
+            //cv::Mat keypoints = msgToCVMat(msg);
+            op::Array<float> keypoints = msgToCVMat2(msg);
+            std::cout << "finished convert" << std::endl;
+
+            std::cout << "cvMat Keypoints of cam" << numcam << ": " << std::endl;
+            for (int i = 0; i < keypoints.getSize(0); i++)
+            {
+                for (int j = 0; j < keypoints.getSize(1); j++)
+                {
+                    for (int k = 0; k < keypoints.getSize(2); k++)
+                    {
+                        std::cout << keypoints[{i, j, k}] << " ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl;
+            }
+            /*std::cout << "cvMat Keypoints size 0: " << keypoints.size[0]  << std::endl;
+            std::cout << "cvMat Keypoints size 1: " << keypoints.size[1]  << std::endl;
+            std::cout << "cvMat Keypoints size 2: " << keypoints.size[2]  << std::endl;*/
+            //std::cout << "opMat Keypoints size : " << keypointsvec[0].printSize() << std::endl;
+
+
             switch (numcam)
             {
                 case 2:
-                    keypointsvec[0].setFrom(OP_CV2OPMAT(keypoints));
+                    //keypointsvec[0].setFrom(OP_CV2OPCONSTMAT(keypoints));
+                    keypointsvec[0] = keypoints;
                     break;
                 case 3:
-                    keypointsvec[1].setFrom(OP_CV2OPMAT(keypoints));
+                    //keypointsvec[1].setFrom(OP_CV2OPCONSTMAT(keypoints));
+                    keypointsvec[1] = keypoints;
                     break;
                 default:
                     std::cerr << "Error: client defined the name of the camera wrong!" << std::endl;
                     break;
             }
 
-           /* std::cout << "cvMat Keypoints of cam" << numcam << ": " << std::endl;
-            for (int i = 0; i < keypoints.size[0]; i++)
+           
+
+            std::cout << "opMat Keypoints of cam" << numcam << ": " << std::endl;
+            for (int i = 0; i < keypointsvec[numcam-2].getSize(0); i++)
             {
-                for (int j = 0; j < keypoints.size[1]; j++)
+                for (int j = 0; j < keypointsvec[numcam - 2].getSize(1); j++)
                 {
-                    for (int k = 0; k < keypoints.size[2]; k++)
+                    for (int k = 0; k < keypointsvec[numcam - 2].getSize(2); k++)
                     {
-                        std::cout << keypoints.at<float>(i, j, k) << " ";
+                        std::cout << keypointsvec[numcam - 2].at({ i, j, k }) << " ";
                     }
                     std::cout << std::endl;
                 }
                 std::cout << std::endl;
-            }*/
+            }
 
             //cout << "Last score of person 0: " << keypoints.at<float>(1, 0, 0) << endl;
             //readnum = atoi(buffer);
@@ -217,24 +255,34 @@ private:
         WSACleanup();
         std::cout << "Client disconnected." << std::endl;
     }
-
-    cv::Mat msgToCVMat(std::string msg)
+private:
+    //static cv::Mat msgToCVMat(std::string msg)
+    op::Array<float> msgToCVMat(std::string msg)
     {
+        std::cout << "inside" << std::endl;
         //string msg(buffer);
-        std::string delimiter = "\r\n\r\n";
-        std::string delimiter2 = "\r\n";
-        std::string delimiter3 = " ";
+        const std::string delimiter = "\r\n\r\n";
+        const std::string delimiter2 = "\r\n";
+        const std::string delimiter3 = " ";
         std::vector<std::string> people;
         std::string temp;
         std::string joint;
         std::string coord;
 
-        cv::Mat person(cv::Size(3, 25), CV_32F);
-        std::vector<cv::Mat> personvec;
-
+        //cv::Mat person(cv::Size(3, 25), CV_32F);
+        //std::vector<cv::Mat> personvec;
+        if (msg.size() < 75) return op::Array<float>({ 1, 25, 3 }, 0.0);
         msg.erase(0, 23); //delete Array<T>.toString():
         msg.erase(msg.length()-4 , msg.length()-1); //delete \n\r\n\r at the end
-
+        //std::cout << msg.size() << std::endl;
+        if (msg.size() < 50) return op::Array<float>({ 1, 25, 3 }, 0.0);
+        while (!std::isdigit(msg.back()))
+        {
+            msg.pop_back();
+        }
+        //std::cout << msg.size() << std::endl;
+        if (msg.size() < 50) return op::Array<float>({ 1, 25, 3 }, 0.0);
+        //std::cout << msg;
 
         //extract people
         size_t pos = 0;
@@ -245,10 +293,11 @@ private:
         }
         people.push_back(msg);
 
-        /*for (int i = 0; i < people.size(); i++)
+        op::Array<float> opkeypoints({ (int)people.size(), 25, 3 });
+        for (int i = 0; i < people.size(); i++)
         {
             std::cout << "Person" << i << ": " << people[i] << std::endl;
-        }*/
+        }
 
         //extract joints
         for (int i = 0; i < people.size(); i++)
@@ -261,11 +310,13 @@ private:
                 int xys = 0;
                 while ((pos2 = joint.find(delimiter3)) != std::string::npos) {
                     coord = joint.substr(0, pos2);
-                    person.at<float>(jid, xys) = stof(coord);
+                    //person.at<float>(jid, xys) = stof(coord);
+                    opkeypoints[{i, jid, xys}] = stof(coord);
                     joint.erase(0, pos2 + delimiter3.length());
                     xys++;
                 }
-                person.at<float>(jid, xys) = stof(joint);
+                //person.at<float>(jid, xys) = stof(joint);
+                opkeypoints[{i, jid, xys}] = stof(joint);
                 people[i].erase(0, pos + delimiter2.length());
                 jid++;
             }
@@ -273,12 +324,14 @@ private:
             int xys = 0;
             while ((pos2 = people[i].find(delimiter3)) != std::string::npos) {
                 coord = people[i].substr(0, pos2);
-                person.at<float>(jid, xys) = std::stof(coord.c_str());
+                //person.at<float>(jid, xys) = std::stof(coord.c_str());
+                opkeypoints[{i, jid, xys}] = std::stof(coord.c_str());
                 people[i].erase(0, pos2 + delimiter3.length());
                 xys++;
             }
-            person.at<float>(jid, xys) = std::stof(people[i].c_str());
-            personvec.push_back(person.clone());
+            //person.at<float>(jid, xys) = std::stof(people[i].c_str());
+            opkeypoints[{i, jid, xys}] = std::stof(people[i].c_str());
+            //personvec.push_back(person.clone());
 
             /*cout << "Personvec" << i <<  ": ";
             for (int j = 0; j < personvec[i].rows; j++)
@@ -290,27 +343,54 @@ private:
                 cout << endl;
             }*/
 
-            //cout << "last score: " << person.at<float>(24, 2) << endl;
+            std::cout << "last score of" << i << ": " << opkeypoints[{i,24,1}] << std::endl;
         }
 
         //vector to one 3D Mat
-        int dims[3] = { personvec.size(),  person.rows, person.cols };
-        cv::Mat keypoints(3, dims, CV_32F);
-        for (int i = 0; i < personvec.size(); ++i)
+        //int dims[3] = { personvec.size(),  person.rows, person.cols };
+        //cv::Mat keypoints(3, dims, CV_32F);
+        //for (int i = 0; i < personvec.size(); ++i)
+        //{
+        //    float* ptr = &keypoints.at<float>(i, 0, 0); // pointer to first element of slice i
+
+        //    cv::Mat destination(person.rows, person.cols, CV_32F, (void*)ptr); // no data copy, see documentation
+
+        //    //cout << "Personvec element: " << personvec[i].at<float>(24, 2) << endl;
+
+        //    personvec[i].copyTo(destination);
+        //}
+
+        return opkeypoints;
+    }
+
+    op::Array<float> msgToCVMat2(std::string msg) 
+    {
+        if (msg.size() < 50) return op::Array<float>({ 1, 25, 3 }, 0.0);
+        //TODO: írd meg getlineal
+        std::stringstream stream(msg);
+        std::string coord;
+        op::Array<float> opkeypoints({ 1, 25, 3 });
+        int person = 0;
+        
+        while (stream.str().length() > 8)
         {
-            float* ptr = &keypoints.at<float>(i, 0, 0); // pointer to first element of slice i
-
-            cv::Mat destination(person.rows, person.cols, CV_32F, (void*)ptr); // no data copy, see documentation
-
-            //cout << "Personvec element: " << personvec[i].at<float>(24, 2) << endl;
-
-            personvec[i].copyTo(destination);
+            for (int i = 0; i < 25; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    std::cout << stream.str().length() << std::endl;
+                    //stream >> coord;
+                    opkeypoints[{person, i, j}] = std::stof(coord);
+                }
+            }
+            person++;
         }
 
-        return keypoints;
+        return opkeypoints;
     }
 
 };
+//bool Server::stop = false;
 
 
 // This worker will just read and return all the jpg files in a directory
@@ -808,7 +888,7 @@ int tutorialApiCpp()
 
         std::string dataset;     // data/*dataset* mappa neve 
         dataset = (!FLAGS_use_webcams) ? "mvmp" : "live";
-        std::map<std::string, Camera> cameras = ParseCameras("C:/Users/nykri/Documents/3Dhuman/4d_association-windows/data/" + dataset + "/calibration.json"); //dataset mappában a calibrációs json fájl
+        std::map<std::string, Camera> cameras = ParseCameras("C:/Users/admin/Documents/EasyMocap/data/" + dataset + "/calibration.json"); //dataset mappában a calibrációs json fájl
         Eigen::Matrix3Xf projs(3, cameras.size() * 4);
         std::vector<cv::Mat> rawImgs(cameras.size());
         std::vector<op::Matrix> rawImgsOpMat(cameras.size());
@@ -821,6 +901,7 @@ int tutorialApiCpp()
         int numLocalCam = 2;
         //std::vector<op::Array<float>> remoteKeypoints(cameras.size() - numLocalCam);
         Server server;
+        std::thread t2;
         std::vector<std::string> ips{ "169.254.150.101","169.254.150.102","169.254.150.103","169.254.150.104" };
         std::vector<cv::Mat> map1s(cameras.size());
         std::vector<cv::Mat> map2s(cameras.size());
@@ -849,7 +930,7 @@ int tutorialApiCpp()
 
             if (!FLAGS_use_webcams)
             {
-                videos[i] = cv::VideoCapture("C:/Users/nykri/Documents/3Dhuman/4d_association-windows/data/" + dataset + "/video/" + iter->first + ".mp4"); //egy videó beolvasás
+                videos[i] = cv::VideoCapture("C:/Users/admin/Documents/EasyMocap/data/" + dataset + "/video/" + iter->first + ".mp4"); //egy videó beolvasás
                 videos[i].set(cv::CAP_PROP_POS_FRAMES, 0); //elsõ frame-el kezdjük
                 cv::Size imgSize(int(videos[i].get(cv::CAP_PROP_FRAME_WIDTH)), int(videos[i].get(cv::CAP_PROP_FRAME_HEIGHT)));
                 projs.middleCols(4 * i, 4) = iter->second.eiProj;
@@ -917,12 +998,25 @@ int tutorialApiCpp()
 
         SkelPainter skelPainter(SKEL19);
         skelPainter.rate = 512.f / float(cameras.begin()->second.imgSize.width);
-        SkelFittingUpdater skelUpdater(SKEL19, "C:/Users/nykri/Documents/3Dhuman/4d_association-windows/data/skel/SKEL19_new");
+        SkelFittingUpdater skelUpdater(SKEL19, "C:/Users/admin/Documents/openpose/src4D/SKEL19_new");
         skelUpdater.SetTemporalTransTerm(1e-1f / std::powf(skelPainter.rate, 2));
         skelUpdater.SetTemporalPoseTerm(1e-1f / std::powf(skelPainter.rate, 2));
 
 
-        if(FLAGS_sharedWork) server = Server(cameras.size() - numLocalCam);
+        if (FLAGS_sharedWork)
+        {
+            server = Server(cameras.size() - numLocalCam);
+            /*if ((server.client != INVALID_SOCKET))
+            {
+                t2 = std::thread(&Server::on_client_connect, &server , server.client, std::ref(server.remoteKeypoints));
+            }*/
+            server.on_client_connect(server.client, server.remoteKeypoints);
+        }
+        while (true)
+        {
+            std::cout << "Tick" << std::endl;
+            Sleep(1000);
+        }
         int framecount = 0;
         while (!userInputClass.isFinished()) {
 #pragma omp parallel for
@@ -1120,7 +1214,15 @@ int tutorialApiCpp()
 
             //This can decrease performance, but it hasn't been checked yet
             if (kbhit() | framecount >= 300)
+            {
+                if (FLAGS_sharedWork)
+                {
+                    server.stop = true;
+                    server.t1.join();
+                    t2.join();
+                }
                 break;
+            }
 
         }//end while
 
@@ -1224,11 +1326,11 @@ int main(int argc, char* argv[])
 
     FLAGS_no_display = true;
     FLAGS_save_images = true;
-    FLAGS_use_webcams = false;
+    FLAGS_use_webcams = true;
     //FLAGS_write_images = "C:\\Users\\nykri\\Documents\\3Dhuman\\openpose\\examples\\media2\\output";
     FLAGS_undist = true;
 
-    FLAGS_sharedWork = false;
+    FLAGS_sharedWork = true;
 
 
     // Running tutorialApiCpp
