@@ -601,6 +601,39 @@ namespace op
     }
 
     template<typename T>
+    const std::string Array<T>::toStringOneLine() const
+    {
+        try
+        {
+            // Initial value
+            std::string string{ "" };
+            if(getSize(0) != 0) string += std::to_string(getSize(0)) + " ";
+            // Add each element
+            for (auto i = 0u; i < mVolume; i++)
+            {
+                // Adding element separated by a space
+                string += std::to_string(pData[i]) + " ";
+                // Introduce an enter for each dimension change
+                // If commented, all values will be printed in the same line
+                /*auto multiplier = 1;
+                for (auto dimension = (int)(mSize.size() - 1u); dimension > 0
+                    && (int(i / multiplier) % getSize(dimension) == getSize(dimension) - 1); dimension--)
+                {
+                    string += "\n";
+                    multiplier *= getSize(dimension);
+                }*/
+            }
+            // Return string
+            return string;
+        }
+        catch (const std::exception& e)
+        {
+            error(e.what(), __LINE__, __FUNCTION__, __FILE__);
+            return "";
+        }
+    }
+
+    template<typename T>
     int Array<T>::getIndex(const std::vector<int>& indexes) const
     {
         try

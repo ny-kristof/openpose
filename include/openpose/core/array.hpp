@@ -473,6 +473,7 @@ namespace op
          * @return A string with the array values in the above format.
          */
         const std::string toString() const;
+        const std::string toStringOneLine() const;
 
     private:
         std::vector<int> mSize;

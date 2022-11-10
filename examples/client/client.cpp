@@ -4,6 +4,7 @@
 // and its own way to render/display them after being processed by OpenPose.
 
 #pragma comment(lib, "Ws2_32.lib")
+#include <ws2tcpip.h>
 
 #include <winsock2.h>
 
@@ -19,8 +20,8 @@
 
 #include "camera.cpp"
 
+//#include <winsock2.h>
 
-#include <ws2tcpip.h>
 #include <tchar.h>
 
 // Custom OpenPose flags
@@ -116,7 +117,8 @@ private:
         WSAStartup(MAKEWORD(2, 0), &wsa_data);
         const auto server = socket(AF_INET, SOCK_STREAM, 0);
 
-        InetPton(AF_INET, _T("127.0.0.1"), &addr.sin_addr.s_addr);
+        //InetPton(AF_INET, _T("127.0.0.1"), &addr.sin_addr.s_addr);
+        InetPton(AF_INET, _T("169.254.154.231"), &addr.sin_addr.s_addr);
 
         addr.sin_family = AF_INET;
         addr.sin_port = htons(5555);
@@ -310,15 +312,21 @@ int tutorialApiCpp()
         opWrapperT.start();
 
         // User processing
+        Sleep(4000);
+
         UserInputClass userInputClass;
+        std::cout << "init socket kesz" << std::endl;
         UserOutputClass userOutputClass;
         bool userWantsToExit = false;
         std::string msg;
+        std::string sKeypoints;
 
-        std::vector<std::string> ips{ "169.254.150.103","169.254.150.104" };
+        std::vector<std::string> ips{ "169.254.150.103" , "169.254.150.104" };
         std::string dataset = "live";
         //TODO: csak a 2-3 indexű kamera szerepeljen a kalibrációs fileban
-        std::map<std::string, Camera> cameras = ParseCameras("C:/Users/nykri/Documents/3Dhuman/4d_association-windows/data/" + dataset + "/calibration.json"); //dataset mappában a calibrációs json fájl
+        std::map<std::string, Camera> cameras = ParseCameras("D:/openpose/calibration_live2cam.json"); //dataset mappában a calibrációs json fájl
+        std::cout << cameras.size() << std::endl;
+        std::cout << ips.size() << std::endl;
         std::vector<op::Matrix> rawImgsOpMat(ips.size());
         std::vector<op::IpCameraReader*> streams(ips.size());
         op::WebcamReader* video = new op::WebcamReader(0);
@@ -336,12 +344,11 @@ int tutorialApiCpp()
                 std::cout << "Img size of cam  " << cam.first << ": " << cameras.begin()->second.imgSize << std::endl;
                 cv::initUndistortRectifyMap(cam.second.originK, cam.second.distCoeff, cv::Mat(), cam.second.originK, cameras.begin()->second.imgSize, CV_32FC1, map1s[std::stoi(cam.first)], map2s[std::stoi(cam.first)]);
                 //cv::initUndistortRectifyMap(cam.second.originK, dist, cv::Mat(), cam.second.originK, cameras.begin()->second.imgSize, CV_32FC1, map1s[std::stoi(cam.first)], map2s[std::stoi(cam.first)]);
-            }
-            //TODO: distortion parameters 
+            } 
 
             //cv::initUndistortRectifyMap(cameras.begin()->second.originK, dist, cv::Mat(), cameras.begin()->second.originK, cameras.begin()->second.imgSize, CV_32FC1, map1, map2);
         }
-
+        std::cout << "init distortion kesz" << std::endl;
         for (int i = 0; i < cameras.size(); i++)
         {
             streams[i] = new op::IpCameraReader("http://admin:admin123@" + ips[i] + "/cgi-bin/mjpg/video.cgi?channel=1&subtype=1", op::Point<int>{640, 480});
@@ -349,10 +356,11 @@ int tutorialApiCpp()
             rawImgsOpMat[i] = op::Matrix(imgSize.width, imgSize.height, CV_8UC3);
             
         }
-
+        std::cout << "init streams kesz" << std::endl;
+        int framecount = 0;
         while (!userWantsToExit && !userInputClass.isFinished())
         {
-
+            Sleep(10);
 #pragma omp parallel for
             for (int i = 0; i < cameras.size(); i++)
             {
@@ -363,7 +371,7 @@ int tutorialApiCpp()
             for (int i = 0; i < cameras.size(); i++)
             {
                 // Push frame
-                auto datumToProcess = userInputClass.createDatum(streams[i]->getFrame());
+                auto datumToProcess = userInputClass.createDatum(rawImgsOpMat[i]);
                 if (datumToProcess != nullptr)
                 {
                     auto successfullyEmplaced = opWrapperT.waitAndEmplace(datumToProcess);
@@ -373,17 +381,24 @@ int tutorialApiCpp()
                     {
                         if (!FLAGS_no_display)
                             userWantsToExit = userOutputClass.display(datumProcessed);
+                        std::cout << "cam: " << i << std::endl;
                         userOutputClass.printKeypoints(datumProcessed);
-                        msg = std::to_string(i+2) + datumProcessed->at(0)->poseKeypoints.toString();
-                        send(userInputClass.getServer(), msg.c_str(), msg.size(), 0);
+                        sKeypoints = datumProcessed->at(0)->poseKeypoints.toStringOneLine();
+                        if (!sKeypoints.empty())
+                        {
+                            msg = std::to_string(i + 2) + sKeypoints;
+                            send(userInputClass.getServer(), msg.c_str(), msg.size(), 0);
+                        }
                     }
                     else
                         op::opLog("Processed datum could not be emplaced.", op::Priority::High);
                 }
 
-                if (userInputClass.getCounter() >= 300 | kbhit())
-                    break;
             }
+            if (framecount >= 1000 | kbhit())
+                break;
+            std::cout << "finished frame " << framecount << std::endl;
+            framecount++;
         }
 
         op::opLog("Stopping thread(s)", op::Priority::High);
@@ -409,6 +424,7 @@ int main(int argc, char* argv[])
 
     FLAGS_net_resolution = "-1x176";
     FLAGS_part_candidates = false;
+    FLAGS_no_display = true;
 
     FLAGS_part_to_show = 0;
     FLAGS_heatmaps_add_PAFs = false;
@@ -416,7 +432,7 @@ int main(int argc, char* argv[])
     FLAGS_heatmaps_add_parts = false;
     FLAGS_heatmaps_scale = 0; //0 --> in range [-1, 1] ; 1 --> in range [0, 1] ; 2(default) --> in range [0 , 255]
 
-    FLAGS_undist = false;
+    FLAGS_undist = true;
 
     // Running tutorialApiCpp
     return tutorialApiCpp();
